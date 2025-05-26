@@ -1,17 +1,27 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+// frontend/src/context/AuthContext.ts
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser, // Alias User type from Firebase
+} from 'firebase/auth';
+import { app } from '../services/firebase'; // Ensure 'app' is exported from firebase.ts
 
-interface User {
+interface AppUser {
   id: string;
-  name: string;
+  name?: string | null; // Name might be optional from Firebase initially
   email: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   loading: boolean;
   error: string | null;
 }
@@ -27,32 +37,43 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [loading, setLoading] = useState<boolean>(true); // Set to true initially while checking auth state
   const [error, setError] = useState<string | null>(null);
 
-  // For demonstration purposes, using mock auth. 
-  // In a real app, you'd call your backend API.
+  const auth = getAuth(app); // Get the Firebase Auth instance
+
+  // Effect to listen for Firebase Auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in
+        setUser({
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName, // Display name might not be set during initial registration
+          email: firebaseUser.email || '',
+        });
+      } else {
+        // User is signed out
+        setUser(null);
+      }
+      setLoading(false); // Auth state checked, stop loading
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [auth]);
+
   const login = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
-    
     try {
-      // Mock successful login for demo
-      // In reality, you'd make an API call here
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (email === 'demo@example.com' && password === 'password') {
-        setUser({
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@example.com'
-        });
-      } else {
-        throw new Error('Invalid credentials');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      await signInWithEmailAndPassword(auth, email, password);
+      // user state will be updated by onAuthStateChanged listener
+    } catch (err: any) {
+      console.error('Firebase Login Error:', err.code, err.message);
+      setError(err.message || 'Login failed. Please check your credentials.');
+      setUser(null); // Ensure user is null on login failure
     } finally {
       setLoading(false);
     }
@@ -61,26 +82,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     setLoading(true);
     setError(null);
-    
     try {
-      // Mock registration for demo
-      // In reality, you'd make an API call here
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // Optionally update user profile with name if desired
+      // await updateProfile(userCredential.user, { displayName: name });
+      // user state will be updated by onAuthStateChanged listener
+      // For now, let's manually set it with name after creation,
+      // as display name isn't automatically populated
       setUser({
-        id: '1',
-        name,
-        email
+        id: userCredential.user.uid,
+        name: name,
+        email: userCredential.user.email || '',
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+
+    } catch (err: any) {
+      console.error('Firebase Register Error:', err.code, err.message);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password should be at least 6 characters.');
+      } else {
+        setError(err.message || 'Registration failed.');
+      }
+      setUser(null); // Ensure user is null on registration failure
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await signOut(auth);
+      // user state will be updated by onAuthStateChanged listener
+    } catch (err: any) {
+      console.error('Firebase Logout Error:', err.message);
+      setError(err.message || 'Logout failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const value = {
@@ -90,8 +131,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     register,
     logout,
     loading,
-    error
+    error,
   };
+
+  // Only render children when authentication state has been checked
+  if (loading) {
+      return <div>Loading authentication...</div>; // Or a proper loading spinner
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Clock, AlertCircle, ArrowRight, Send } from 'lucide-react';
+import { Clock, AlertCircle, ArrowRight, Send, Lightbulb } from 'lucide-react'; // Added Lightbulb icon
 import Card, { CardBody, CardFooter, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import TextArea from '../components/ui/TextArea';
 import { useAuth } from '../context/AuthContext';
 
-// Mock data for a sample interview
+// IMPORTANT: This is still mock data for questions.
+// In a real app, questions would also come from the backend.
 const mockInterviewData = {
   category: 'Web Development',
   difficulty: 'Medium',
@@ -21,9 +22,10 @@ const mockInterviewData = {
         'Props are passed from parent components, state is managed within a component',
         'Props are immutable, state can be updated with setState',
         'Props configure a component, state tracks changing data',
-        'Use props for data that doesn't change, state for data that changes over time'
+        'Use props for data that doesn\'t change, state for data that changes over time'
       ]
     },
+    // ... rest of your mock questions (q2 to q10) ...
     {
       id: 'q2',
       text: 'What is the virtual DOM in React and how does it improve performance?',
@@ -66,7 +68,7 @@ const mockInterviewData = {
     },
     {
       id: 'q6',
-      text: 'Explain how React's Context API works and when you should use it instead of prop drilling.',
+      text: 'Explain how React\'s Context API works and when you should use it instead of prop drilling.',
       expectedAnswerPoints: [
         'Context provides a way to share values without explicitly passing props',
         'Uses Provider to supply value and Consumer to use it',
@@ -118,10 +120,10 @@ const mockInterviewData = {
 };
 
 const InterviewSession = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth(); // Get currentUser to pass token
   const navigate = useNavigate();
   const { id } = useParams();
-  
+
   const [interviewData, setInterviewData] = useState(mockInterviewData);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState('');
@@ -129,6 +131,8 @@ const InterviewSession = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isTimeWarning, setIsTimeWarning] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null); // New state for AI feedback
+  const [feedbackError, setFeedbackError] = useState<string | null>(null); // New state for feedback errors
 
   const currentQuestion = interviewData.questions[currentQuestionIndex];
 
@@ -147,12 +151,12 @@ const InterviewSession = () => {
           handleEndInterview();
           return 0;
         }
-        
+
         // Set warning when less than 5 minutes remain
         if (prevTime <= 300 && !isTimeWarning) {
           setIsTimeWarning(true);
         }
-        
+
         return prevTime - 1;
       });
     }, 1000);
@@ -166,28 +170,67 @@ const InterviewSession = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handleSubmitAnswer = () => {
+  const handleSubmitAnswer = async () => { // Made it async
     setIsSubmitting(true);
-    
+    setAiFeedback(null); // Clear previous feedback
+    setFeedbackError(null); // Clear previous errors
+
     // Save the current answer
     setAnswers(prev => ({
       ...prev,
       [currentQuestion.id]: answer
     }));
 
-    // Simulate API call for AI evaluation
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setAnswer('');
-      
-      // If this was the last question, end the interview
-      if (currentQuestionIndex === interviewData.questions.length - 1) {
-        handleEndInterview();
-      } else {
-        // Otherwise, move to the next question
-        setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+    try {
+      const idToken = await currentUser?.getIdToken(); // Get the Firebase ID token
+      if (!idToken) {
+        throw new Error("No authentication token found.");
       }
-    }, 1500);
+
+      // --- ACTUAL API CALL TO YOUR BACKEND FOR AI EVALUATION ---
+      const response = await fetch('http://localhost:3001/api/interview/evaluate', { // Adjust port if needed
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}` // Pass the token
+        },
+        body: JSON.stringify({
+          question: currentQuestion.text,
+          userAnswer: answer,
+          // You might send expectedAnswerPoints for richer evaluation if your backend uses them
+          // expectedAnswerPoints: currentQuestion.expectedAnswerPoints,
+          category: interviewData.category,
+          difficulty: interviewData.difficulty
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to get AI feedback.');
+      }
+
+      const data = await response.json();
+      console.log("AI Feedback received:", data); // Log the feedback for debugging
+
+      setAiFeedback(data.feedback); // Assuming your backend sends { feedback: "..." }
+
+    } catch (err: any) {
+      console.error("Error getting AI feedback:", err);
+      setFeedbackError(err.message || "An error occurred while getting AI feedback.");
+    } finally {
+      setIsSubmitting(false);
+      setAnswer(''); // Clear the answer input for the next question
+    }
+  };
+
+  const handleNextQuestion = () => {
+    setAiFeedback(null); // Clear feedback for next question
+    setFeedbackError(null); // Clear errors for next question
+    if (currentQuestionIndex === interviewData.questions.length - 1) {
+      handleEndInterview();
+    } else {
+      setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+    }
   };
 
   const handleEndInterview = () => {
@@ -229,6 +272,31 @@ const InterviewSession = () => {
           </Card>
         </div>
 
+        {/* Display AI Feedback here */}
+        {aiFeedback && (
+          <div className="md:col-span-12">
+            <Card className="mb-6 bg-green-50 border border-green-200">
+              <CardHeader className="bg-green-100">
+                <h3 className="text-lg font-medium text-green-800 flex items-center">
+                  <Lightbulb size={18} className="mr-2" /> AI Feedback
+                </h3>
+              </CardHeader>
+              <CardBody>
+                <p className="text-gray-800 whitespace-pre-wrap">{aiFeedback}</p> {/* Use whitespace-pre-wrap to respect newlines */}
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {feedbackError && (
+          <div className="md:col-span-12">
+            <div className="flex items-center mt-4 p-3 bg-error-50 text-error-700 rounded-md">
+              <AlertCircle size={18} className="mr-2" />
+              <span>Error getting feedback: {feedbackError}</span>
+            </div>
+          </div>
+        )}
+
         <div className="md:col-span-12">
           <Card>
             <CardHeader>
@@ -242,8 +310,9 @@ const InterviewSession = () => {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 className="focus:border-primary-500 focus:ring-primary-500"
+                disabled={isSubmitting} // Disable while submitting
               />
-              
+
               {isTimeWarning && (
                 <div className="flex items-center mt-4 p-3 bg-error-50 text-error-700 rounded-md">
                   <AlertCircle size={18} className="mr-2" />
@@ -258,24 +327,42 @@ const InterviewSession = () => {
                 </span>
               </div>
               <div className="flex space-x-4">
-                {currentQuestionIndex < interviewData.questions.length - 1 ? (
-                  <Button
-                    onClick={handleSubmitAnswer}
-                    isLoading={isSubmitting}
-                    disabled={!answer.trim()}
-                    rightIcon={<ArrowRight size={16} />}
-                  >
-                    Next Question
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmitAnswer}
-                    isLoading={isSubmitting}
-                    disabled={!answer.trim()}
-                    rightIcon={<Send size={16} />}
-                  >
-                    Submit Final Answer
-                  </Button>
+                {aiFeedback ? ( // Show Next Question button AFTER feedback is received
+                  currentQuestionIndex < interviewData.questions.length - 1 ? (
+                    <Button
+                      onClick={handleNextQuestion}
+                      rightIcon={<ArrowRight size={16} />}
+                    >
+                      Next Question
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleEndInterview}
+                      rightIcon={<Send size={16} />}
+                    >
+                      Finish Interview
+                    </Button>
+                  )
+                ) : ( // Show Submit Answer button BEFORE feedback is received
+                  currentQuestionIndex < interviewData.questions.length - 1 ? (
+                    <Button
+                      onClick={handleSubmitAnswer}
+                      isLoading={isSubmitting}
+                      disabled={!answer.trim()}
+                      rightIcon={<ArrowRight size={16} />}
+                    >
+                      Submit Answer
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleSubmitAnswer}
+                      isLoading={isSubmitting}
+                      disabled={!answer.trim()}
+                      rightIcon={<Send size={16} />}
+                    >
+                      Submit Final Answer
+                    </Button>
+                  )
                 )}
               </div>
             </CardFooter>

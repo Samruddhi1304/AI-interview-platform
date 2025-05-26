@@ -1,62 +1,133 @@
+// frontend/src/pages/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, History, Settings, BarChart2, Clock, Medal, Bookmark } from 'lucide-react';
+import { Play, History, Settings, BarChart2, Clock, Medal, Bookmark, Code, Briefcase, Users } from 'lucide-react';
 import Card, { CardBody, CardHeader, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+// *** CORRECTED IMPORT PATH FOR FIREBASE.TS based on src/services/firebase.ts ***
+import { auth } from '../services/firebase.ts'; 
 
-// Mock data for past interviews
-const mockPastInterviews = [
-  {
-    id: '1',
-    category: 'DSA',
-    date: '2025-04-15',
-    score: 85,
-    questions: 8,
-  },
-  {
-    id: '2',
-    category: 'Web Development',
-    date: '2025-04-10',
-    score: 72,
-    questions: 10,
-  },
-  {
-    id: '3',
-    category: 'HR',
-    date: '2025-04-05',
-    score: 90,
-    questions: 6,
-  }
-];
+// Define a type for a single interview record (adjust based on your actual backend data structure)
+interface InterviewRecord {
+  id: string;
+  category: string;
+  date: string; // ISO 8601 string, e.g., '2025-04-15T10:30:00Z'
+  score: number;
+  questions: number;
+  // Add other fields you might store, e.g., feedback, user answers, etc.
+}
 
 const Dashboard = () => {
-  const { user, isAuthenticated } = useAuth();
+  // We still use 'user' from useAuth for displaying email, etc., but not for getIdToken directly
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [pastInterviews, setPastInterviews] = useState(mockPastInterviews);
+
+  // State for dynamic interview data
+  const [pastInterviews, setPastInterviews] = useState<InterviewRecord[]>([]);
   const [stats, setStats] = useState({
     totalInterviews: 0,
     averageScore: 0,
     totalTime: 0,
     bestCategory: '',
   });
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
+
+  console.log("Dashboard Render: isAuthenticated =", isAuthenticated);
+  console.log("Dashboard Render: user =", user);
+  console.log("Dashboard Render: authLoading =", authLoading);
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (!isAuthenticated) {
+    console.log("Dashboard useEffect: isAuthenticated =", isAuthenticated);
+
+    if (!isAuthenticated && !authLoading) {
+      console.log("Redirecting to /login due to isAuthenticated = false and not loading.");
       navigate('/login');
       return;
     }
 
-    // Mock loading data
-    setPastInterviews(mockPastInterviews);
-    setStats({
-      totalInterviews: mockPastInterviews.length,
-      averageScore: Math.round(mockPastInterviews.reduce((acc, interview) => acc + interview.score, 0) / mockPastInterviews.length),
-      totalTime: 205, // minutes
-      bestCategory: 'HR',
-    });
-  }, [isAuthenticated, navigate]);
+    // Now, we check auth.currentUser directly to get the token
+    if (isAuthenticated && !authLoading) {
+      const fetchUserInterviews = async () => {
+        setDataLoading(true);
+        setDataError(null);
+
+        try {
+          // --- NEW APPROACH FOR GETTING ID TOKEN ---
+          const currentUser = auth.currentUser; // Get the currently signed-in user from Firebase auth instance
+
+          console.log("Inside fetchUserInterviews - Current Firebase User:", currentUser);
+          console.log("Is currentUser null?", currentUser === null);
+          console.log("Does currentUser have getIdToken?", typeof currentUser?.getIdToken === 'function');
+
+          if (!currentUser || typeof currentUser.getIdToken !== 'function') {
+            console.error("Critical: auth.currentUser is invalid or missing getIdToken. User object:", currentUser);
+            setDataError('Authentication error: User session invalid. Please re-login.');
+            setDataLoading(false);
+            // navigate('/login'); // Consider uncommenting this for production
+            return;
+          }
+
+          const idToken = await currentUser.getIdToken();
+          // --- END NEW APPROACH ---
+
+          console.log("Attempting to fetch interviews with token:", idToken ? "Token present" : "No Token!"); // Debug log
+
+          // IMPORTANT: Ensure VITE_BACKEND_URL is correctly set in your .env file
+          // Example: VITE_BACKEND_URL=http://localhost:3001
+          const backendUrl = import.meta.env.VITE_BACKEND_URL;
+          if (!backendUrl) {
+              console.error("VITE_BACKEND_URL is not defined in your .env file!");
+              setDataError("Backend URL not configured. Please check your .env file.");
+              setDataLoading(false);
+              return;
+          }
+
+          const response = await axios.get(`${backendUrl}/api/user/interviews`, {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+
+          const fetchedInterviews: InterviewRecord[] = response.data;
+
+          const total = fetchedInterviews.length;
+          const avgScore = total > 0
+            ? Math.round(fetchedInterviews.reduce((acc, interview) => acc + interview.score, 0) / total)
+            : 0;
+          
+          const totalTime = 0; // Placeholder for now
+          const bestCategory = ''; // Placeholder for now
+
+          setPastInterviews(fetchedInterviews);
+          setStats({
+            totalInterviews: total,
+            averageScore: avgScore,
+            totalTime: totalTime,
+            bestCategory: bestCategory,
+          });
+
+        } catch (err: any) {
+          console.error('Error fetching user interviews:', err);
+          // Log the full error response if available for more details
+          if (axios.isAxiosError(err) && err.response) {
+              console.error('Backend response error data:', err.response.data);
+              console.error('Backend response status:', err.response.status);
+              console.error('Backend response headers:', err.response.headers);
+              setDataError(err.response.data?.error || `Failed to load interview history. Status: ${err.response.status}`);
+          } else {
+              setDataError(err.message || 'Failed to load interview history.');
+          }
+        } finally {
+          setDataLoading(false);
+        }
+      };
+
+      fetchUserInterviews();
+    }
+  }, [isAuthenticated, authLoading, navigate]); // Removed 'user' from dependencies as we use auth.currentUser directly
 
   const renderScoreColor = (score: number) => {
     if (score >= 85) return 'text-success-600';
@@ -64,13 +135,29 @@ const Dashboard = () => {
     return 'text-error-600';
   };
 
+  if (authLoading || dataLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-gray-600">Loading dashboard data...</p>
+      </div>
+    );
+  }
+
+  if (dataError) {
+    return (
+      <div className="flex justify-center items-center h-screen text-red-600">
+        <p>Error: {dataError}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
       <div className="md:flex md:items-center md:justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Welcome back, {user?.name}
+            Welcome back, {user?.name || user?.email || 'Guest'}
           </p>
         </div>
         <div className="mt-4 md:mt-0">
@@ -82,7 +169,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card className="bg-primary-50 border border-primary-100">
           <CardBody className="flex items-center p-4">
@@ -133,7 +219,6 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Recent Interviews */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Interviews</h2>
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -181,7 +266,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
