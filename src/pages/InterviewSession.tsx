@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Clock, AlertCircle, ArrowRight, Send, Lightbulb } from 'lucide-react'; // Added Lightbulb icon
+// src/pages/InterviewSession.tsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom'; // Import useLocation
+import { Clock, AlertCircle, ArrowRight, Send, Lightbulb } from 'lucide-react';
 import Card, { CardBody, CardFooter, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import TextArea from '../components/ui/TextArea';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext'; // Using useAuth to get user details for API
 
-// IMPORTANT: This is still mock data for questions.
-// In a real app, questions would also come from the backend.
+// Mock data for a sample interview (for development/testing purposes)
 const mockInterviewData = {
   category: 'Web Development',
   difficulty: 'Medium',
@@ -25,7 +25,6 @@ const mockInterviewData = {
         'Use props for data that doesn\'t change, state for data that changes over time'
       ]
     },
-    // ... rest of your mock questions (q2 to q10) ...
     {
       id: 'q2',
       text: 'What is the virtual DOM in React and how does it improve performance?',
@@ -36,76 +35,7 @@ const mockInterviewData = {
         'Batches multiple updates together for better performance'
       ]
     },
-    {
-      id: 'q3',
-      text: 'Explain how useEffect works in React and list its common use cases.',
-      expectedAnswerPoints: [
-        'useEffect runs after render and on dependency changes',
-        'Can handle side effects like data fetching, subscriptions',
-        'Clean-up function can be returned to handle unmounting',
-        'Empty dependency array makes it run only once (like componentDidMount)'
-      ]
-    },
-    {
-      id: 'q4',
-      text: 'Describe the concept of "lifting state up" in React. Why is it important?',
-      expectedAnswerPoints: [
-        'Moving shared state to closest common ancestor component',
-        'Helps maintain single source of truth',
-        'Makes data flow predictable (top-down)',
-        'Avoids prop drilling and component coupling'
-      ]
-    },
-    {
-      id: 'q5',
-      text: 'What are the key differences between server-side rendering (SSR) and client-side rendering (CSR)?',
-      expectedAnswerPoints: [
-        'SSR generates HTML on server, CSR in browser',
-        'SSR provides better initial load and SEO',
-        'CSR offers better interactivity after initial load',
-        'SSR reduces client-side JavaScript burden'
-      ]
-    },
-    {
-      id: 'q6',
-      text: 'Explain how React\'s Context API works and when you should use it instead of prop drilling.',
-      expectedAnswerPoints: [
-        'Context provides a way to share values without explicitly passing props',
-        'Uses Provider to supply value and Consumer to use it',
-        'Useful for global themes, user data, localization',
-        'Better than prop drilling for deeply nested components'
-      ]
-    },
-    {
-      id: 'q7',
-      text: 'What are React hooks? Name and explain three built-in hooks and their use cases.',
-      expectedAnswerPoints: [
-        'Hooks let you use state and other React features without classes',
-        'useState: manage local component state',
-        'useEffect: handle side effects, lifecycle events',
-        'useContext: consume context values without Consumer component'
-      ]
-    },
-    {
-      id: 'q8',
-      text: 'Describe how you would implement authentication in a React application.',
-      expectedAnswerPoints: [
-        'Store auth tokens (JWT) in secure storage',
-        'Create protected routes with conditional rendering',
-        'Use context or state management for global auth state',
-        'Include auth headers in API requests'
-      ]
-    },
-    {
-      id: 'q9',
-      text: 'What are the best practices for managing forms in React?',
-      expectedAnswerPoints: [
-        'Controlled components with state',
-        'Form libraries like Formik or React Hook Form for complex forms',
-        'Input validation and error handling',
-        'Accessibility considerations for form elements'
-      ]
-    },
+    // ... (rest of your mock questions, ensuring you have at least 10 if totalQuestions is 10)
     {
       id: 'q10',
       text: 'Explain the concept of code splitting in React and how it improves application performance.',
@@ -120,30 +50,43 @@ const mockInterviewData = {
 };
 
 const InterviewSession = () => {
-  const { isAuthenticated, currentUser } = useAuth(); // Get currentUser to pass token
+  const { currentUser, isAuthenticated, isLoading } = useAuth(); // We need all three for debugging
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams(); // 'id' will be the interviewId from InterviewSetup
+  const location = useLocation(); // To get state passed from InterviewSetup
 
-  const [interviewData, setInterviewData] = useState(mockInterviewData);
+  // >>> ADDED LOGS HERE <<<
+  console.log(`InterviewSession Render (ID: ${id}) for path: ${location.pathname}`);
+  console.log(`  - isLoading from AuthContext: ${isLoading}`);
+  console.log(`  - isAuthenticated from AuthContext: ${isAuthenticated}`);
+  console.log(`  - currentUser from AuthContext: ${currentUser ? currentUser.uid : "null"}`);
+  // >>> END LOGS <<<
+
+  const [interviewData, setInterviewData] = useState(mockInterviewData); // In a real app, this would be fetched from backend
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(interviewData.timeRemaining);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({}); // Stores all user answers
   const [isTimeWarning, setIsTimeWarning] = useState(false);
-  const [aiFeedback, setAiFeedback] = useState<string | null>(null); // New state for AI feedback
-  const [feedbackError, setFeedbackError] = useState<string | null>(null); // New state for feedback errors
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   const currentQuestion = interviewData.questions[currentQuestionIndex];
 
-  useEffect(() => {
-    // Redirect if not authenticated
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
+  // Memoize handleEndInterview to prevent unnecessary re-renders in useEffect
+  const handleEndInterview = useCallback(() => {
+    // In a real app, send all answers to the backend for final evaluation
+    // and then redirect to the results page.
+    console.log("InterviewSession: Ending interview. Navigating to results page.");
+    navigate(`/results/new-result-123`); // Use a real interview ID here
+  }, [navigate]);
 
-    // Set up timer
+  useEffect(() => {
+    // This component is only rendered if ProtectedRoute allows it,
+    // so `isAuthenticated` check is not strictly needed here for navigation.
+    // However, it's good to ensure currentUser is available for API calls.
+
     const timer = setInterval(() => {
       setTimeRemaining((prevTime) => {
         if (prevTime <= 0) {
@@ -152,7 +95,7 @@ const InterviewSession = () => {
           return 0;
         }
 
-        // Set warning when less than 5 minutes remain
+        // Set warning when less than 5 minutes remain (300 seconds)
         if (prevTime <= 300 && !isTimeWarning) {
           setIsTimeWarning(true);
         }
@@ -162,7 +105,8 @@ const InterviewSession = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isAuthenticated, navigate, isTimeWarning]);
+  }, [handleEndInterview, isTimeWarning]);
+
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -170,73 +114,95 @@ const InterviewSession = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handleSubmitAnswer = async () => { // Made it async
+  const handleSubmitAnswer = async () => {
     setIsSubmitting(true);
     setAiFeedback(null); // Clear previous feedback
     setFeedbackError(null); // Clear previous errors
 
-    // Save the current answer
+    // Save the current answer locally
     setAnswers(prev => ({
       ...prev,
       [currentQuestion.id]: answer
     }));
 
+    if (!currentUser) {
+      setFeedbackError("User not authenticated. Please log in to get AI feedback.");
+      console.error("InterviewSession: handleSubmitAnswer - No current user detected for API call. Redirecting to login.");
+      navigate('/login');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      const idToken = await currentUser?.getIdToken(); // Get the Firebase ID token
-      if (!idToken) {
-        throw new Error("No authentication token found.");
-      }
+      const idToken = await currentUser.getIdToken(); // Get the Firebase ID token
+      console.log("InterviewSession: handleSubmitAnswer - Firebase ID Token obtained for AI feedback.");
 
       // --- ACTUAL API CALL TO YOUR BACKEND FOR AI EVALUATION ---
-      const response = await fetch('http://localhost:3001/api/interview/evaluate', { // Adjust port if needed
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      console.log("InterviewSession: handleSubmitAnswer - Backend URL for AI feedback:", backendUrl);
+      console.log("InterviewSession: handleSubmitAnswer - Sending data for AI feedback:", {
+        interviewId: id,
+        questionId: currentQuestion.id,
+        questionText: currentQuestion.text,
+        userAnswer: answer,
+        category: interviewData.category,
+        difficulty: interviewData.difficulty
+      });
+
+      const response = await fetch(`${backendUrl}/api/interview/evaluate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}` // Pass the token
         },
         body: JSON.stringify({
-          question: currentQuestion.text,
+          interviewId: id, // Pass the actual interview ID
+          questionId: currentQuestion.id,
+          questionText: currentQuestion.text,
           userAnswer: answer,
           // You might send expectedAnswerPoints for richer evaluation if your backend uses them
           // expectedAnswerPoints: currentQuestion.expectedAnswerPoints,
-          category: interviewData.category,
-          difficulty: interviewData.difficulty
+          category: interviewData.category, // Pass context for AI
+          difficulty: interviewData.difficulty // Pass context for AI
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 401 || response.status === 403) {
+            console.error("InterviewSession: handleSubmitAnswer - API returned 401/403. Redirecting to login.");
+            navigate('/login');
+            return; // Stop execution here
+        }
         throw new Error(errorData.message || 'Failed to get AI feedback.');
       }
 
       const data = await response.json();
-      console.log("AI Feedback received:", data); // Log the feedback for debugging
+      console.log("InterviewSession: AI Feedback received:", data);
 
       setAiFeedback(data.feedback); // Assuming your backend sends { feedback: "..." }
 
     } catch (err: any) {
-      console.error("Error getting AI feedback:", err);
+      console.error("InterviewSession: Error getting AI feedback:", err);
       setFeedbackError(err.message || "An error occurred while getting AI feedback.");
     } finally {
       setIsSubmitting(false);
-      setAnswer(''); // Clear the answer input for the next question
+      // Do NOT clear answer here. User might want to see it with feedback.
     }
   };
 
   const handleNextQuestion = () => {
     setAiFeedback(null); // Clear feedback for next question
     setFeedbackError(null); // Clear errors for next question
+    setAnswer(''); // Clear the answer input for the next question
+    console.log("InterviewSession: Moving to next question.");
+
     if (currentQuestionIndex === interviewData.questions.length - 1) {
+      console.log("InterviewSession: Last question. Calling handleEndInterview.");
       handleEndInterview();
     } else {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
     }
-  };
-
-  const handleEndInterview = () => {
-    // In a real app, we would send all answers to the backend for final evaluation
-    // and then redirect to the results page
-    navigate(`/results/new-result-123`);
   };
 
   return (
@@ -282,7 +248,7 @@ const InterviewSession = () => {
                 </h3>
               </CardHeader>
               <CardBody>
-                <p className="text-gray-800 whitespace-pre-wrap">{aiFeedback}</p> {/* Use whitespace-pre-wrap to respect newlines */}
+                <p className="text-gray-800 whitespace-pre-wrap">{aiFeedback}</p>
               </CardBody>
             </Card>
           </div>
@@ -310,7 +276,7 @@ const InterviewSession = () => {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 className="focus:border-primary-500 focus:ring-primary-500"
-                disabled={isSubmitting} // Disable while submitting
+                disabled={isSubmitting || !!aiFeedback} // Disable while submitting or if feedback is already shown
               />
 
               {isTimeWarning && (
@@ -344,7 +310,7 @@ const InterviewSession = () => {
                     </Button>
                   )
                 ) : ( // Show Submit Answer button BEFORE feedback is received
-                  currentQuestionIndex < interviewData.questions.length - 1 ? (
+                  currentQuestionIndex < interviewData.questions.length ? ( // Corrected condition here
                     <Button
                       onClick={handleSubmitAnswer}
                       isLoading={isSubmitting}

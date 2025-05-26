@@ -1,10 +1,13 @@
+// src/pages/InterviewSetup.tsx
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, ListChecks, Settings, Code, Briefcase, Users, Award } from 'lucide-react';
 import Card, { CardBody, CardFooter, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext'; // Import useAuth to get user info
+import axios from 'axios'; // For making API calls
 
+// --- Interface Definitions (Good to keep these for type safety) ---
 interface CategoryOption {
   id: string;
   name: string;
@@ -25,108 +28,170 @@ interface DurationOption {
   time: number;
 }
 
+// --- Interview Options Data ---
+const categoryOptions: CategoryOption[] = [
+  {
+    id: 'DSA',
+    name: 'Data Structures & Algorithms',
+    description: 'Coding problems, algorithm analysis, and optimization',
+    icon: <Code size={24} />
+  },
+  {
+    id: 'Web Development',
+    name: 'Web Development',
+    description: 'Frontend, backend, and full-stack development questions',
+    icon: <Briefcase size={24} />
+  },
+  {
+    id: 'HR',
+    name: 'HR & Behavioral',
+    description: 'Soft skills, situational, and behavioral questions',
+    icon: <Users size={24} />
+  },
+  {
+    id: 'System Design',
+    name: 'System Design',
+    description: 'Architecture, scalability, and design patterns',
+    icon: <Award size={24} />
+  }
+];
+
+const difficultyOptions: DifficultyOption[] = [
+  {
+    id: 'easy',
+    name: 'Easy',
+    description: 'Beginner-friendly questions to build confidence'
+  },
+  {
+    id: 'medium',
+    name: 'Medium',
+    description: 'Moderate difficulty for intermediate practice'
+  },
+  {
+    id: 'hard',
+    name: 'Hard',
+    description: 'Challenging questions for experienced candidates'
+  }
+];
+
+const durationOptions: DurationOption[] = [
+  {
+    id: 'short',
+    name: 'Short',
+    questions: 5,
+    time: 15
+  },
+  {
+    id: 'medium',
+    name: 'Medium',
+    questions: 10,
+    time: 30
+  },
+  {
+    id: 'long',
+    name: 'Long',
+    questions: 15,
+    time: 45
+  }
+];
+
+// --- InterviewSetup Component ---
 const InterviewSetup = () => {
-  const { isAuthenticated } = useAuth();
+  // Use useAuth to get authentication status and current user object
+  const { isAuthenticated, currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Get the preselected category from location state if available (e.g., from Dashboard quick start)
-  const preselectedCategory = location.state?.category || '';
-
-  // Define the options for categories, difficulties, and durations
-  const categoryOptions: CategoryOption[] = [
-    {
-      id: 'DSA',
-      name: 'Data Structures & Algorithms',
-      description: 'Coding problems, algorithm analysis, and optimization',
-      icon: <Code size={24} />
-    },
-    {
-      id: 'Web Development',
-      name: 'Web Development',
-      description: 'Frontend, backend, and full-stack development questions',
-      icon: <Briefcase size={24} />
-    },
-    {
-      id: 'HR',
-      name: 'HR & Behavioral',
-      description: 'Soft skills, situational, and behavioral questions',
-      icon: <Users size={24} />
-    },
-    {
-      id: 'System Design',
-      name: 'System Design',
-      description: 'Architecture, scalability, and design patterns',
-      icon: <Award size={24} />
-    }
-  ];
-
-  const difficultyOptions: DifficultyOption[] = [
-    {
-      id: 'easy',
-      name: 'Easy',
-      description: 'Beginner-friendly questions to build confidence'
-    },
-    {
-      id: 'medium',
-      name: 'Medium',
-      description: 'Moderate difficulty for intermediate practice'
-    },
-    {
-      id: 'hard',
-      name: 'Hard',
-      description: 'Challenging questions for experienced candidates'
-    }
-  ];
-
-  const durationOptions: DurationOption[] = [
-    {
-      id: 'short',
-      name: 'Short',
-      questions: 5,
-      time: 15
-    },
-    {
-      id: 'medium',
-      name: 'Medium',
-      questions: 10,
-      time: 30
-    },
-    {
-      id: 'long',
-      name: 'Long',
-      questions: 15,
-      time: 45
-    }
-  ];
-
-  // Find the initial category based on preselected value or default to the first option
-  const initialCategory = categoryOptions.find(cat => cat.name === preselectedCategory) || categoryOptions[0];
+  // Get the preselected category from location state if available
+  // Fallback to the first category option if not found or null
+  const preselectedCategoryName = location.state?.category || categoryOptions[0].name;
+  const initialCategory = categoryOptions.find(cat => cat.name === preselectedCategoryName) || categoryOptions[0];
 
   const [selectedCategory, setSelectedCategory] = useState<CategoryOption>(initialCategory);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyOption>(difficultyOptions[1]); // Default to Medium
-  const [selectedDuration, setSelectedDuration] = useState<DurationOption>(durationOptions[1]); // Default to Medium duration
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyOption>(difficultyOptions[1]);
+  const [selectedDuration, setSelectedDuration] = useState<DurationOption>(durationOptions[1]);
+  const [isLoading, setIsLoading] = useState(false); // New loading state for API call
+  const [error, setError] = useState<string | null>(null); // New error state for API call
 
-  const handleStartInterview = () => {
-    // Pass the selected category name, difficulty name, and number of questions
-    // to the InterviewSession page via the 'state' object.
-    // The ID in the path (e.g., 'new-session-123') can still be a placeholder for now,
-    // as the actual session ID will likely be generated by the backend later.
-    navigate(`/interview-session`, {
-      state: {
-        category: selectedCategory.name,       // e.g., "Web Development"
-        difficulty: selectedDifficulty.name,   // e.g., "Medium"
-        numQuestions: selectedDuration.questions // e.g., 10
-        // You could also pass selectedDuration.time if your InterviewSession uses it
+  const handleStartInterview = async () => {
+    // This component is wrapped by ProtectedRoute, so isAuthenticated should be true here.
+    // However, it's good practice to check if currentUser is available before using it.
+    if (!currentUser) {
+      setError("User not authenticated. Please log in.");
+      console.error("InterviewSetup: Cannot start interview, no current user detected. Redirecting to login.");
+      navigate('/login'); // Fallback in case of unexpected state
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null); // Clear previous errors
+
+    console.log("InterviewSetup: Attempting to start interview...");
+    console.log("InterviewSetup: Current User UID:", currentUser.uid);
+    console.log("InterviewSetup: isAuthenticated from AuthContext:", isAuthenticated);
+    console.log("InterviewSetup: Selected Category:", selectedCategory.name);
+    console.log("InterviewSetup: Selected Difficulty:", selectedDifficulty.name);
+    console.log("InterviewSetup: Selected Duration Questions:", selectedDuration.questions);
+
+
+    try {
+      // 1. Get the Firebase ID token from the current user
+      const idToken = await currentUser.getIdToken(); // This is an async call
+      console.log("InterviewSetup: Firebase ID Token obtained.");
+
+      // Define your backend URL (e.g., from environment variables)
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      console.log("InterviewSetup: Backend URL:", backendUrl);
+
+      // 2. Make the API call to your backend, including the Authorization header with the ID token
+      const response = await axios.post(`${backendUrl}/api/interviews/create`, {
+        category: selectedCategory.name,
+        difficulty: selectedDifficulty.name,
+        numQuestions: selectedDuration.questions,
+        // The user ID should be extracted by the backend from the provided JWT token
+      }, {
+        headers: {
+          Authorization: `Bearer ${idToken}` // Pass the Firebase ID token
+        }
+      });
+
+      const interviewId = response.data.interviewId;
+
+      if (!interviewId) {
+        throw new Error("Backend did not return an interview ID. Please verify your backend's API response.");
       }
-    });
-  };
+      console.log("InterviewSetup: Backend returned interviewId:", interviewId);
 
-  // If the user is not authenticated and not in a loading state, redirect to login
-  if (!isAuthenticated) {
-    navigate('/login');
-    return null; // Or a loading spinner
-  }
+      // Navigate to the interview session page with the obtained ID
+      navigate(`/interview/session/${interviewId}`, {
+        state: {
+          category: selectedCategory.name,
+          difficulty: selectedDifficulty.name,
+          numQuestions: selectedDuration.questions
+        }
+      });
+      console.log(`InterviewSetup: Navigated to /interview/session/${interviewId}`);
+
+    } catch (err) {
+      console.error("Error starting interview:", err); // Log the full error object
+
+      if (axios.isAxiosError(err) && err.response) {
+        // Handle specific HTTP errors
+        if (err.response.status === 401 || err.response.status === 403) {
+            setError("Authentication failed. Please log in again.");
+            console.error("InterviewSetup: API returned 401/403. Redirecting to login.");
+            navigate('/login'); // Redirect to login on authentication failure
+        } else {
+            setError(err.response.data.message || "Failed to start interview. Please check your backend connection or try again.");
+            console.error("InterviewSetup: API Error Response:", err.response.data);
+        }
+      } else {
+        setError("An unexpected error occurred. Please try again. Check console for details.");
+      }
+    } finally {
+      setIsLoading(false); // Always stop loading, whether successful or not
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
@@ -139,6 +204,14 @@ const InterviewSetup = () => {
         </button>
         <h1 className="text-2xl font-bold text-gray-900">Setup Your Interview</h1>
       </div>
+
+      {/* Error Message Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      )}
 
       <div className="space-y-8">
         {/* Category Selection */}
@@ -268,8 +341,9 @@ const InterviewSetup = () => {
             </Button>
             <Button
               onClick={handleStartInterview}
+              disabled={isLoading} // Disable button while API call is in progress
             >
-              Start Interview
+              {isLoading ? 'Starting Interview...' : 'Start Interview'}
             </Button>
           </CardFooter>
         </Card>
