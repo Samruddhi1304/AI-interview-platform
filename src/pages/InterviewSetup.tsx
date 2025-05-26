@@ -1,0 +1,266 @@
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft, Clock, ListChecks, Settings, Code, Briefcase, Users, Award } from 'lucide-react';
+import Card, { CardBody, CardFooter, CardHeader } from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
+
+interface CategoryOption {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+interface DifficultyOption {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface DurationOption {
+  id: string;
+  name: string;
+  questions: number;
+  time: number;
+}
+
+const InterviewSetup = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the preselected category from location state if available
+  const preselectedCategory = location.state?.category || '';
+
+  // Define the options
+  const categoryOptions: CategoryOption[] = [
+    {
+      id: 'DSA',
+      name: 'Data Structures & Algorithms',
+      description: 'Coding problems, algorithm analysis, and optimization',
+      icon: <Code size={24} />
+    },
+    {
+      id: 'Web Development',
+      name: 'Web Development',
+      description: 'Frontend, backend, and full-stack development questions',
+      icon: <Briefcase size={24} />
+    },
+    {
+      id: 'HR',
+      name: 'HR & Behavioral',
+      description: 'Soft skills, situational, and behavioral questions',
+      icon: <Users size={24} />
+    },
+    {
+      id: 'System Design',
+      name: 'System Design',
+      description: 'Architecture, scalability, and design patterns',
+      icon: <Award size={24} />
+    }
+  ];
+
+  const difficultyOptions: DifficultyOption[] = [
+    {
+      id: 'easy',
+      name: 'Easy',
+      description: 'Beginner-friendly questions to build confidence'
+    },
+    {
+      id: 'medium',
+      name: 'Medium',
+      description: 'Moderate difficulty for intermediate practice'
+    },
+    {
+      id: 'hard',
+      name: 'Hard',
+      description: 'Challenging questions for experienced candidates'
+    }
+  ];
+
+  const durationOptions: DurationOption[] = [
+    {
+      id: 'short',
+      name: 'Short',
+      questions: 5,
+      time: 15
+    },
+    {
+      id: 'medium',
+      name: 'Medium',
+      questions: 10,
+      time: 30
+    },
+    {
+      id: 'long',
+      name: 'Long',
+      questions: 15,
+      time: 45
+    }
+  ];
+
+  // Find the preselected category object
+  const initialCategory = categoryOptions.find(cat => cat.id === preselectedCategory) || categoryOptions[0];
+
+  const [selectedCategory, setSelectedCategory] = useState<CategoryOption>(initialCategory);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyOption>(difficultyOptions[1]);
+  const [selectedDuration, setSelectedDuration] = useState<DurationOption>(durationOptions[1]);
+
+  const handleStartInterview = () => {
+    // In a real app, we would make an API call to create a new interview session
+    // For now, just navigate to a mock interview session
+    navigate(`/interview/session/new-session-123`);
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+      <div className="flex items-center mb-6">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors"
+        >
+          <ArrowLeft size={20} className="text-gray-600" />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-900">Setup Your Interview</h1>
+      </div>
+
+      <div className="space-y-8">
+        {/* Category Selection */}
+        <Card>
+          <CardHeader className="flex items-center">
+            <Settings size={20} className="mr-2 text-primary-600" />
+            <h2 className="text-lg font-medium text-gray-900">Select Interview Category</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {categoryOptions.map((category) => (
+                <div
+                  key={category.id}
+                  className={`
+                    border rounded-lg p-4 cursor-pointer transition-all
+                    ${selectedCategory.id === category.id 
+                      ? 'border-primary-500 bg-primary-50 shadow-sm' 
+                      : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setSelectedCategory(category)}
+                >
+                  <div className="flex items-center">
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center mr-3
+                      ${selectedCategory.id === category.id ? 'bg-primary-100 text-primary-600' : 'bg-gray-100 text-gray-600'}
+                    `}>
+                      {category.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{category.name}</h3>
+                      <p className="text-sm text-gray-500">{category.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Difficulty Selection */}
+        <Card>
+          <CardHeader className="flex items-center">
+            <ListChecks size={20} className="mr-2 text-primary-600" />
+            <h2 className="text-lg font-medium text-gray-900">Select Difficulty Level</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {difficultyOptions.map((difficulty) => (
+                <div
+                  key={difficulty.id}
+                  className={`
+                    border rounded-lg p-4 cursor-pointer transition-all
+                    ${selectedDifficulty.id === difficulty.id 
+                      ? 'border-primary-500 bg-primary-50 shadow-sm' 
+                      : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setSelectedDifficulty(difficulty)}
+                >
+                  <h3 className="font-medium text-gray-900">{difficulty.name}</h3>
+                  <p className="text-sm text-gray-500">{difficulty.description}</p>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Duration Selection */}
+        <Card>
+          <CardHeader className="flex items-center">
+            <Clock size={20} className="mr-2 text-primary-600" />
+            <h2 className="text-lg font-medium text-gray-900">Select Interview Duration</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {durationOptions.map((duration) => (
+                <div
+                  key={duration.id}
+                  className={`
+                    border rounded-lg p-4 cursor-pointer transition-all
+                    ${selectedDuration.id === duration.id 
+                      ? 'border-primary-500 bg-primary-50 shadow-sm' 
+                      : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setSelectedDuration(duration)}
+                >
+                  <h3 className="font-medium text-gray-900">{duration.name}</h3>
+                  <div className="flex justify-between text-sm text-gray-500 mt-2">
+                    <span>{duration.questions} questions</span>
+                    <span>~{duration.time} mins</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Summary & Start Button */}
+        <Card>
+          <CardBody>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Interview Summary</h2>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500">Category</p>
+                  <p className="font-medium text-gray-900">{selectedCategory.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Difficulty</p>
+                  <p className="font-medium text-gray-900">{selectedDifficulty.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Duration</p>
+                  <p className="font-medium text-gray-900">{selectedDuration.questions} questions (~{selectedDuration.time} mins)</p>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+          <CardFooter className="flex justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/dashboard')}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleStartInterview}
+            >
+              Start Interview
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default InterviewSetup;
