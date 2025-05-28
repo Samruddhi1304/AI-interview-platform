@@ -1,13 +1,11 @@
 // backend/server.js
 
-// backend/server.js
-
 // Load environment variables from .env file (for local development)
 require('dotenv').config();
 
 // --- Debugging for server startup ---
 console.log('--- SERVER.JS IS STARTING UP ---');
-console.log("Server.js: Initializing modules..."); // Added log
+console.log("Server.js: Initializing modules...");
 
 const express = require('express');
 const cors = require('cors');
@@ -15,17 +13,18 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid'); // For generating unique IDs
 const PDFDocument = require('pdfkit');
-const sgMail = require('@sendgrid/mail'); // NEW: SendGrid library
+const sgMail = require('@sendgrid/mail'); // SendGrid library
 const path = require('path'); // IMPORTANT: Add this line to import the path module
 
 const app = express();
-const port = process.env.PORT || 3001; // Use Render's assigned PORT, fallback to 3001 for local development
+// Use process.env.PORT provided by Render, fallback to 3001 for local development
+const port = process.env.PORT || 3001;
 
 // --- Firebase Admin SDK Initialization ---
 console.log("Server.js: Initializing Firebase Admin SDK...");
 try {
     // IMPORTANT: Get the service account JSON content from environment variable
-    const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON; // CRITICAL CHANGE: Read from environment variable
+    const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
     if (!serviceAccountJsonString) {
         console.error("Server.js ERROR: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set!");
         process.exit(1); // Exit if critical variable is missing
@@ -51,8 +50,8 @@ try {
     process.exit(1); // Exit if Firebase cannot be initialized
 }
 const db = admin.firestore();
-console.log("Server.js: Firebase initialized. Continuing with other setup..."); // Added log
-// --- END Firebase Admin SDK Initialization ----
+console.log("Server.js: Firebase initialized. Continuing with other setup...");
+// --- END Firebase Admin SDK Initialization ---
 
 // Middleware
 app.use(cors());
@@ -60,44 +59,30 @@ app.use(express.json());
 
 // --- Initialize Google Generative AI Client ---
 const geminiApiKey = process.env.GOOGLE_API_KEY;
-
-// --- Debugging for GOOGLE_API_KEY ---
 console.log('DEBUG: Value of GOOGLE_API_KEY:', geminiApiKey ? 'Loaded (Length: ' + geminiApiKey.length + ')' : 'Not loaded or empty');
-// --- End Debugging ---
 
 if (!geminiApiKey) {
-    console.error("Error: GOOGLE_API_KEY is not set in your .env file!");
-    console.error("Please add GOOGLE_API_KEY='your_api_key_here' to your .env file in the backend directory.");
+    console.error("Error: GOOGLE_API_KEY is not set!");
+    console.error("Please ensure GOOGLE_API_KEY environment variable is set on Render.");
     process.exit(1);
 }
 const genAI = new GoogleGenerativeAI(geminiApiKey);
-// Using gemini-1.5-flash for faster responses
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-console.log('Google Generative AI client initialized.');
+console.log('Server.js: Google Generative AI client initialized.');
 // --- END Google Generative AI Client Initialization ---
 
-// --- NEW: Configure SendGrid API Key ---
-// Ensure SENDGRID_API_KEY is set in your .env file
+// --- Configure SendGrid API Key ---
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-// --- END NEW: Configure SendGrid API Key ---
+console.log('Server.js: SendGrid API Key set.');
+// --- END Configure SendGrid API Key ---
 
-// --- NEW: Email Sending Utility Function ---
-/**
- * Sends a scheduled interview email to a user.
- * This function is now called specifically by the /api/schedule endpoint.
- * @param {string} userEmail - The recipient's email address.
- * @param {string} userName - The recipient's name.
- * @param {object} interviewDetails - Object containing category, scheduledDateTime (ISO string), and notes (optional).
- */
+// --- Email Sending Utility Function ---
 const sendScheduledInterviewEmail = async (userEmail, userName, interviewDetails) => {
     const { category, scheduledDateTime, notes } = interviewDetails;
-
-    // Convert ISO string to Date object for formatting in the email
     const dateObj = new Date(scheduledDateTime);
     const formattedDate = dateObj.toLocaleDateString();
     const formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Basic validation for essential email components
     if (!userEmail || !category || !scheduledDateTime || !process.env.SENDER_EMAIL) {
         console.error("sendScheduledInterviewEmail: Missing crucial details for email sending. userEmail:", userEmail, "category:", category, "scheduledDateTime:", scheduledDateTime, "SENDER_EMAIL:", process.env.SENDER_EMAIL);
         return false;
@@ -106,9 +91,8 @@ const sendScheduledInterviewEmail = async (userEmail, userName, interviewDetails
     const msg = {
         to: userEmail,
         from: {
-            // This MUST be the exact email address you verified via SendGrid's Single Sender Verification
             email: process.env.SENDER_EMAIL,
-            name: "InterviewAI Team" // Use the "From Name" you configured in SendGrid
+            name: "InterviewAI Team"
         },
         subject: `Your Interview for ${category} is Scheduled!`,
         html: `
@@ -131,25 +115,22 @@ const sendScheduledInterviewEmail = async (userEmail, userName, interviewDetails
     try {
         await sgMail.send(msg);
         console.log(`Scheduled interview email sent to ${userEmail}`);
-        return true; // Indicate success
+        return true;
     } catch (error) {
         console.error(`Error sending email to ${userEmail}:`);
         if (error.response) {
-            // Log detailed error response from SendGrid API
             console.error(error.response.body);
         } else {
             console.error(error);
         }
-        return false; // Indicate failure
+        return false;
     }
 };
-// --- END NEW: Email Sending Utility Function ---
-
+// --- END Email Sending Utility Function ---
 
 // --- Middleware to verify Firebase ID token ---
 const verifyFirebaseToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         console.warn('Authentication failed: No authorization token or malformed header.');
         return res.status(401).json({ message: 'No authorization token provided or token is malformed.' });
@@ -159,7 +140,7 @@ const verifyFirebaseToken = async (req, res, next) => {
 
     try {
         const decodedToken = await admin.auth().verifyIdToken(idToken);
-        req.user = decodedToken; // Attach decoded token to request for later use
+        req.user = decodedToken;
         next();
     } catch (error) {
         console.error('Error verifying Firebase ID token:', error);
@@ -173,23 +154,16 @@ const verifyFirebaseToken = async (req, res, next) => {
 };
 // --- END verifyFirebaseToken Middleware ---
 
-
 // =======================================================
 // --- Interview Session Management Routes ---
-// These routes manage the lifecycle of practice interview sessions.
 // =======================================================
 
 // --- MODIFIED ROUTE: POST /api/schedule-interview ---
-// This endpoint is called by frontend's InterviewSetup.tsx.
-// It creates a new interview record in Firestore but DOES NOT send an email.
 app.post('/api/schedule-interview', verifyFirebaseToken, async (req, res) => {
     try {
-        // userEmail and userName are received from frontend but NOT used for email sending here.
-        // They are stored in the interview record for completeness/future use.
         const { userId, category, difficulty, numQuestions, interviewDate, interviewTime, userEmail, userName } = req.body;
         const authenticatedUserId = req.user.uid;
 
-        // Ensure the userId provided in the body matches the authenticated user's ID
         if (userId !== authenticatedUserId) {
             console.warn(`[CREATE INTERVIEW] Mismatched User ID. Token UID: ${authenticatedUserId}, Body UID: ${userId}`);
             return res.status(403).json({ message: 'Unauthorized: User ID mismatch.' });
@@ -197,42 +171,34 @@ app.post('/api/schedule-interview', verifyFirebaseToken, async (req, res) => {
 
         console.log(`[CREATE INTERVIEW] Request to create interview for user ${userId} (Category: ${category}, Difficulty: ${difficulty}, Questions: ${numQuestions})`);
 
-        // Basic validation for all required fields
         if (!userId || !category || !difficulty || typeof numQuestions !== 'number' || numQuestions <= 0) {
             return res.status(400).json({ message: 'Missing or invalid required interview parameters (userId, category, difficulty, numQuestions).' });
         }
 
         const interviewId = uuidv4();
-
         const newInterviewData = {
             userId: userId,
             category: category,
             difficulty: difficulty,
             numQuestions: numQuestions,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            // Store the scheduled date/time from InterviewSetup.tsx form
             scheduledDate: interviewDate,
             scheduledTime: interviewTime,
-            userEmail: userEmail,       // User email from frontend (for record-keeping)
-            userName: userName,         // User name from frontend (for record-keeping)
-            status: 'active', // 'active', 'completed', 'cancelled'
-            questions: [], // Questions will be generated and stored here later
+            userEmail: userEmail,
+            userName: userName,
+            status: 'active',
+            questions: [],
             overallScore: null,
             duration: null,
             strengths: [],
             improvements: []
         };
-
         await db.collection('interviews').doc(interviewId).set(newInterviewData);
         console.log(`[CREATE INTERVIEW] Successfully created interview session ${interviewId} for user ${userId}`);
-
-        // IMPORTANT: No email is sent from this route anymore.
-        // The frontend will now directly navigate to the interview session.
         res.status(200).json({
             interviewId: interviewId,
             message: 'Interview session created successfully.'
         });
-
     } catch (error) {
         console.error('[CREATE INTERVIEW ERROR] Error creating interview session in backend:', error);
         res.status(500).json({ message: 'Failed to create interview session on the server.', error: error.message });
@@ -240,10 +206,7 @@ app.post('/api/schedule-interview', verifyFirebaseToken, async (req, res) => {
 });
 // --- END MODIFIED ROUTE: /api/schedule-interview ---
 
-
 // --- ROUTE: GET /api/interviews/:interviewId ---
-// Fetches active interview details and generates questions if not present.
-// This route effectively serves as a "resume interview" endpoint as well.
 app.get('/api/interviews/:interviewId', verifyFirebaseToken, async (req, res) => {
     try {
         const { interviewId } = req.params;
@@ -269,14 +232,11 @@ app.get('/api/interviews/:interviewId', verifyFirebaseToken, async (req, res) =>
             return res.status(403).json({ message: 'Access denied. This interview does not belong to your account.' });
         }
 
-        // Only allow fetching if status is 'active' or 'completed'
         if (interviewData.status !== 'active' && interviewData.status !== 'completed') {
-            console.warn(`[FETCH/RESUME INTERVIEW WARNING] Interview ${interviewId} is not active or completed. Status: ${interviewData.status}`);
+            console.warn(`[FETCH/RESUME INTERVIEW WARNING] Interview ${interviewId} is not active or completed. Status: ${interviewData.status}.`);
             return res.status(400).json({ message: `Interview cannot be resumed. Current status is ${interviewData.status}.` });
         }
 
-
-        // Generate questions if they don't exist yet for this interview (for new 'active' sessions)
         if (!interviewData.questions || interviewData.questions.length === 0) {
             console.log(`[GENERATE QUESTIONS] Generating questions for interview ${interviewId} (Category: ${interviewData.category}, Difficulty: ${interviewData.difficulty}, Count: ${interviewData.numQuestions})`);
 
@@ -341,9 +301,7 @@ app.get('/api/interviews/:interviewId', verifyFirebaseToken, async (req, res) =>
 });
 // --- END /api/interviews/:interviewId ---
 
-
 // --- ROUTE: GET /api/user/interviews/active ---
-// Fetches a list of ACTIVE interview sessions for a user.
 app.get('/api/user/interviews/active', verifyFirebaseToken, async (req, res) => {
     try {
         const userId = req.user.uid;
@@ -383,9 +341,7 @@ app.get('/api/user/interviews/active', verifyFirebaseToken, async (req, res) => 
 });
 // --- END /api/user/interviews/active ---
 
-
 // --- ROUTE: PUT /api/interviews/:interviewId/cancel ---
-// Marks an active interview session as 'cancelled'.
 app.put('/api/interviews/:interviewId/cancel', verifyFirebaseToken, async (req, res) => {
     try {
         const { interviewId } = req.params;
@@ -432,9 +388,7 @@ app.put('/api/interviews/:interviewId/cancel', verifyFirebaseToken, async (req, 
 });
 // --- END /api/interviews/:interviewId/cancel ---
 
-
 // --- ROUTE: POST /api/interview/complete ---
-// Handles saving the detailed results of a completed interview.
 app.post('/api/interview/complete', verifyFirebaseToken, async (req, res) => {
     const {
         interviewId,
@@ -499,9 +453,7 @@ app.post('/api/interview/complete', verifyFirebaseToken, async (req, res) => {
 });
 // --- END /api/interview/complete ---
 
-
 // --- ROUTE: GET /api/interviews/results/:interviewId ---
-// Fetches detailed results for a COMPLETED interview.
 app.get('/api/interviews/results/:interviewId', verifyFirebaseToken, async (req, res) => {
     try {
         const { interviewId } = req.params;
@@ -559,9 +511,7 @@ app.get('/api/interviews/results/:interviewId', verifyFirebaseToken, async (req,
 });
 // --- END /api/interviews/results/:interviewId ---
 
-
 // --- ROUTE: GET /api/interviews/results/:interviewId/download ---
-// Generates and serves a PDF report for a COMPLETED interview.
 app.get('/api/interviews/results/:interviewId/download', verifyFirebaseToken, async (req, res) => {
     try {
         const { interviewId } = req.params;
@@ -680,9 +630,7 @@ app.get('/api/interviews/results/:interviewId/download', verifyFirebaseToken, as
 });
 // --- END /api/interviews/results/:interviewId/download ---
 
-
 // --- ROUTE: GET /api/user/interviews ---
-// Fetches a list of all interview sessions (active, completed, etc.) for a user.
 app.get('/api/user/interviews', verifyFirebaseToken, async (req, res) => {
     try {
         const userId = req.user.uid;
@@ -723,9 +671,7 @@ app.get('/api/user/interviews', verifyFirebaseToken, async (req, res) => {
 });
 // --- END /api/user/interviews ---
 
-
 // --- ROUTE: POST /api/interview/evaluate ---
-// Sends a question and user answer to Gemini for evaluation.
 app.post('/api/interview/evaluate', verifyFirebaseToken, async (req, res) => {
     const { question, userAnswer, category, difficulty, interviewId, questionId } = req.body;
 
@@ -808,9 +754,7 @@ app.post('/api/interview/evaluate', verifyFirebaseToken, async (req, res) => {
 });
 // --- END /api/interview/evaluate ---
 
-
 // --- ROUTE: GET /api/recommendations ---
-// Fetches personalized practice recommendations for the authenticated user.
 app.get('/api/recommendations', verifyFirebaseToken, async (req, res) => {
     try {
         const userId = req.user.uid;
@@ -882,7 +826,6 @@ app.get('/api/recommendations', verifyFirebaseToken, async (req, res) => {
     }
 });
 // --- END /api/recommendations ---
-
 
 // =======================================================
 // --- Scheduling Management Routes (Now sending email for new scheduled items) ---
@@ -1047,8 +990,9 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// For any other requests (frontend client-side routing), serve the main React index.html
-app.get('/*', (req, res) => { // This route catches all paths not handled by APIs or '/'
+// For any requests that are NOT API calls and are not caught by static files,
+// serve the main React index.html
+app.get('/*', (req, res) => { // IMPORTANT: Ensure this route catches all paths
     console.log("Server.js: Serving index.html for client-side route:", req.path);
     res.sendFile(path.join(__dirname, 'build', 'index.html'), (err) => {
         if (err) {
@@ -1063,9 +1007,8 @@ app.get('/*', (req, res) => { // This route catches all paths not handled by API
 console.log(`Server.js: Attempting to start server on port: ${port}`);
 app.listen(port, () => {
     console.log(`Server.js: Backend server is running on port ${port}`);
-    // These logs confirm your environment variables are loaded
-    console.log(`Server.js: SENDER_EMAIL: ${process.env.SENDER_EMAIL ? 'Loaded' : 'Not Loaded'}`);
-    console.log(`Server.js: FRONTEND_URL: ${process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'Not Loaded'}`);
+    console.log(`Server.js: SENDER_EMAIL: ${process.env.SENDER_EMAIL ? 'Loaded' : 'Not Loaded'}`); // Confirm env var is loaded
+    console.log(`Server.js: FRONTEND_URL: ${process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'Not Loaded'}`); // Confirm env var is loaded
     console.log("Server.js: Application fully started!");
 });
 
