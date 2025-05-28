@@ -1046,7 +1046,7 @@ console.log("Server.js: Static files path set to:", path.join(__dirname, 'build'
 
 // For any requests that are NOT API calls and are not caught by static files,
 // serve the main React index.html
-app.get('/*', (req, res) => { // IMPORTANT: Ensure this route catches all paths
+app.get('*', (req, res) => { // IMPORTANT: Ensure this route catches all paths
     console.log("Server.js: Serving index.html for route:", req.path);
     res.sendFile(path.join(__dirname, 'build', 'index.html'), (err) => {
         if (err) {
