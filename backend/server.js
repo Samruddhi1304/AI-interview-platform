@@ -608,10 +608,10 @@ app.get('/api/interviews/results/:interviewId/download', verifyFirebaseToken, as
                 doc.text('Key Points:');
                 if (q.keyPoints && q.keyPoints.length > 0) {
                     q.keyPoints.forEach(kp => {
-                        doc.text(`  [${kp.met ? '✓' : '✗'}] ${kp.text}`);
+                        doc.text(`   [${kp.met ? '✓' : '✗'}] ${kp.text}`);
                     });
                 } else {
-                    doc.text('  No key points provided.');
+                    doc.text('   No key points provided.');
                 }
                 doc.moveDown(1); // Space after each question
             });
