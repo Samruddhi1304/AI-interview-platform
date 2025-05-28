@@ -1,19 +1,19 @@
-// src/components/ProtectedRoute.tsx
+// frontend/src/components/ProtectedRoute.tsx
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate, Outlet, useLocation } from 'react-router-dom'; // Make sure useLocation is imported!
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, loading } = useAuth(); // Corrected: isLoading to loading
   const location = useLocation(); // <--- This line is important for logging the path
 
   // >>> YOU MUST ADD THESE CONSOLE.LOG STATEMENTS <<<
   console.log(`ProtectedRoute Render for path: ${location.pathname}`);
-  console.log(`  - isLoading: ${isLoading}`);
+  console.log(`  - loading: ${loading}`); // Corrected: isLoading to loading
   console.log(`  - isAuthenticated: ${isAuthenticated}`);
   // >>> END OF LOGS TO ADD <<<
 
-  if (isLoading) {
+  if (loading) {
     // You can render a loading spinner or skeleton here
     return <div>Loading authentication...</div>; // Keep this loading indicator!
   }

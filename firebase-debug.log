@@ -1,0 +1,106 @@
+[debug] [2025-05-26T07:19:57.446Z] ----------------------------------------------------------------------
+[debug] [2025-05-26T07:19:57.449Z] Command:       C:\nvm4w\nodejs\node.exe C:\nvm4w\nodejs\node_modules\firebase-tools\lib\bin\firebase.js emulators:start
+[debug] [2025-05-26T07:19:57.449Z] CLI Version:   13.35.1
+[debug] [2025-05-26T07:19:57.450Z] Platform:      win32
+[debug] [2025-05-26T07:19:57.450Z] Node Version:  v18.20.8
+[debug] [2025-05-26T07:19:57.452Z] Time:          Mon May 26 2025 12:49:57 GMT+0530 (India Standard Time)
+[debug] [2025-05-26T07:19:57.452Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-05-26T07:19:57.866Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-05-26T07:19:57.866Z] > authorizing via signed-in user (samruddhirawandal@gmail.com)
+[info] i  emulators: Starting emulators: auth, functions, extensions {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth, functions, extensions"}}
+[debug] [2025-05-26T07:19:57.873Z] Checked if tokens are valid: false, expires at: 1748244474730
+[debug] [2025-05-26T07:19:57.874Z] Checked if tokens are valid: false, expires at: 1748244474730
+[debug] [2025-05-26T07:19:57.874Z] > refreshing access token with scopes: []
+[debug] [2025-05-26T07:19:57.876Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-05-26T07:19:57.877Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-05-26T07:19:58.115Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-05-26T07:19:58.115Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-05-26T07:19:58.134Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/ai-interview-bf496 [none]
+[debug] [2025-05-26T07:19:59.681Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/ai-interview-bf496 200
+[debug] [2025-05-26T07:19:59.682Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/ai-interview-bf496 {"projectNumber":"225820613828","projectId":"ai-interview-bf496","lifecycleState":"ACTIVE","name":"Ai-interview","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-05-26T04:35:50.781299Z"}
+[debug] [2025-05-26T07:19:59.725Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-05-26T07:19:59.725Z] [auth] Authentication Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-05-26T07:19:59.725Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2025-05-26T07:19:59.733Z] [hub] writing locator at C:\Users\SHREE\AppData\Local\Temp\hub-ai-interview-bf496.json
+[debug] [2025-05-26T07:19:59.759Z] [Extensions] Started Extensions emulator, this is a noop.
+[debug] [2025-05-26T07:19:59.797Z] [functions] Functions Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-05-26T07:19:59.797Z] [eventarc] Eventarc Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-05-26T07:19:59.798Z] [tasks] Cloud Tasks Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2025-05-26T07:19:59.798Z] late-assigned ports for functions and eventarc emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}],"functions":[{"address":"127.0.0.1","family":"IPv4","port":5001}],"eventarc":[{"address":"127.0.0.1","family":"IPv4","port":9299}],"tasks":[{"address":"127.0.0.1","family":"IPv4","port":9499}]},"metadata":{"message":"late-assigned ports for functions and eventarc emulators"}}
+[warn] !  functions: The following emulators are not running, calls to these services from the Functions emulator will affect production: apphosting, firestore, database, hosting, pubsub, storage, dataconnect {"metadata":{"emulator":{"name":"functions"},"message":"The following emulators are not running, calls to these services from the Functions emulator will affect production: \u001b[1mapphosting, firestore, database, hosting, pubsub, storage, dataconnect\u001b[22m"}}
+[debug] [2025-05-26T07:20:00.000Z] defaultcredentials: writing to file C:\Users\SHREE\AppData\Roaming\firebase\samruddhirawandal_gmail_com_application_default_credentials.json
+[debug] [2025-05-26T07:20:00.032Z] Setting GAC to C:\Users\SHREE\AppData\Roaming\firebase\samruddhirawandal_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\SHREE\\AppData\\Roaming\\firebase\\samruddhirawandal_gmail_com_application_default_credentials.json"}}
+[debug] [2025-05-26T07:20:00.033Z] Checked if tokens are valid: true, expires at: 1748247597116
+[debug] [2025-05-26T07:20:00.033Z] Checked if tokens are valid: true, expires at: 1748247597116
+[debug] [2025-05-26T07:20:00.033Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/ai-interview-bf496/adminSdkConfig [none]
+[debug] [2025-05-26T07:20:00.586Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/ai-interview-bf496/adminSdkConfig 200
+[debug] [2025-05-26T07:20:00.587Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/ai-interview-bf496/adminSdkConfig {"projectId":"ai-interview-bf496","storageBucket":"ai-interview-bf496.firebasestorage.app"}
+[debug] [2025-05-26T07:20:10.830Z] [Extensions] Connecting Extensions emulator, this is a noop.
+[info] i  functions: Watching "C:\Users\SHREE\Interviewapp\functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"C:\\Users\\SHREE\\Interviewapp\\functions\" for Cloud Functions..."}}
+[debug] [2025-05-26T07:20:10.845Z] Validating nodejs source
+[debug] [2025-05-26T07:20:13.299Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint .",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "eslint-config-google": "^0.14.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[debug] [2025-05-26T07:20:13.299Z] Building nodejs source
+[debug] [2025-05-26T07:20:13.300Z] Failed to find version of module node: reached end of search path C:\Users\SHREE\Interviewapp\functions\node_modules
+[warn] !  functions: Your requested "node" version "22" doesn't match your global version "18". Using node@18 from host. 
+[debug] [2025-05-26T07:20:13.305Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-05-26T07:20:13.319Z] Found firebase-functions binary at 'C:\Users\SHREE\Interviewapp\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8283
+
+[debug] [2025-05-26T07:20:14.793Z] Got response from /__/functions.yaml {"endpoints":{},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-05-26T07:20:14.828Z] defaultcredentials: writing to file C:\Users\SHREE\AppData\Roaming\firebase\samruddhirawandal_gmail_com_application_default_credentials.json
+[debug] [2025-05-26T07:20:14.829Z] Setting GAC to C:\Users\SHREE\AppData\Roaming\firebase\samruddhirawandal_gmail_com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to C:\\Users\\SHREE\\AppData\\Roaming\\firebase\\samruddhirawandal_gmail_com_application_default_credentials.json"}}
+[info] +  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2025-05-26T07:20:14.841Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: connect ECONNREFUSED ::1:40001. If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌────────────────┬────────────────┬──────────────────────────────────┐
+│ Emulator       │ Host:Port      │ View in Emulator UI              │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4000/auth       │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Functions      │ 127.0.0.1:5001 │ http://127.0.0.1:4000/functions  │
+├────────────────┼────────────────┼──────────────────────────────────┤
+│ Extensions     │ 127.0.0.1:5001 │ http://127.0.0.1:4000/extensions │
+└────────────────┴────────────────┴──────────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+┌─────────────────────────┬───────────────┬─────────────────────┐
+│ Extension Instance Name │ Extension Ref │ View in Emulator UI │
+└─────────────────────────┴───────────────┴─────────────────────┘
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2025-05-26T07:22:54.442Z] >>> [apiv2][query] POST http://127.0.0.1:5001/functions/projects/ai-interview-bf496/trigger_multicast [none]
+[debug] [2025-05-26T07:22:54.442Z] >>> [apiv2][body] POST http://127.0.0.1:5001/functions/projects/ai-interview-bf496/trigger_multicast {"eventId":"a1b03c65-469d-45cc-a5f5-60cc4dd895ab","eventType":"providers/firebase.auth/eventTypes/user.create","resource":{"name":"projects/ai-interview-bf496","service":"firebaseauth.googleapis.com"},"params":{},"timestamp":"2025-05-26T07:22:54.440Z","data":{"uid":"Pi7HChYjjni29OZtgw8DMgEzlYv9","email":"rawandalsamruddhi@gmail.com","emailVerified":false,"metadata":{"creationTime":"2025-05-26T07:22:54.438Z","lastSignInTime":"2025-05-26T07:22:54.438Z"},"customClaims":{},"providerData":[{"providerId":"password","email":"rawandalsamruddhi@gmail.com","federatedId":"rawandalsamruddhi@gmail.com","rawId":"rawandalsamruddhi@gmail.com"}]}}
+[debug] [2025-05-26T07:22:54.469Z] <<< [apiv2][status] POST http://127.0.0.1:5001/functions/projects/ai-interview-bf496/trigger_multicast 200
+[debug] [2025-05-26T07:22:54.469Z] <<< [apiv2][body] POST http://127.0.0.1:5001/functions/projects/ai-interview-bf496/trigger_multicast {"status":"multicast_acknowledged"}
+[debug] [2025-05-26T09:40:47.243Z] Received signal SIGHUP 1

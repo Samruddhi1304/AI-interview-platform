@@ -1,13 +1,13 @@
-// src/pages/InterviewSetup.tsx
+// frontend/src/pages/InterviewSetup.tsx
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Clock, ListChecks, Settings, Code, Briefcase, Users, Award } from 'lucide-react';
 import Card, { CardBody, CardFooter, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext'; // Import useAuth to get user info
-import axios from 'axios'; // For making API calls
+import axios, { AxiosError } from 'axios'; // For making API calls, import AxiosError for type checking
 
-// --- Interface Definitions (Good to keep these for type safety) ---
+// --- Interface Definitions ---
 interface CategoryOption {
   id: string;
   name: string;
@@ -97,13 +97,12 @@ const durationOptions: DurationOption[] = [
 
 // --- InterviewSetup Component ---
 const InterviewSetup = () => {
-  // Use useAuth to get authentication status and current user object
-  const { isAuthenticated, currentUser } = useAuth();
+  const { isAuthenticated, user, firebaseUser } = useAuth(); // `user` is your custom AppUser, `firebaseUser` is the raw Firebase User
+
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get the preselected category from location state if available
-  // Fallback to the first category option if not found or null
   const preselectedCategoryName = location.state?.category || categoryOptions[0].name;
   const initialCategory = categoryOptions.find(cat => cat.name === preselectedCategoryName) || categoryOptions[0];
 
@@ -113,13 +112,16 @@ const InterviewSetup = () => {
   const [isLoading, setIsLoading] = useState(false); // New loading state for API call
   const [error, setError] = useState<string | null>(null); // New error state for API call
 
+  // Note: mockInterviewDate and mockInterviewTime are used here only for record-keeping in the backend
+  // when starting a new interview, not for sending an email from this page.
+  const [mockInterviewDate, setMockInterviewDate] = useState<string>(new Date().toISOString().split('T')[0]); // Default to today
+  const [mockInterviewTime, setMockInterviewTime] = useState<string>(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })); // Default to current time
+
   const handleStartInterview = async () => {
-    // This component is wrapped by ProtectedRoute, so isAuthenticated should be true here.
-    // However, it's good practice to check if currentUser is available before using it.
-    if (!currentUser) {
+    if (!firebaseUser) {
       setError("User not authenticated. Please log in.");
-      console.error("InterviewSetup: Cannot start interview, no current user detected. Redirecting to login.");
-      navigate('/login'); // Fallback in case of unexpected state
+      console.error("InterviewSetup: Cannot start interview, Firebase user not detected. Redirecting to login.");
+      navigate('/login');
       return;
     }
 
@@ -127,31 +129,37 @@ const InterviewSetup = () => {
     setError(null); // Clear previous errors
 
     console.log("InterviewSetup: Attempting to start interview...");
-    console.log("InterviewSetup: Current User UID:", currentUser.uid);
-    console.log("InterviewSetup: isAuthenticated from AuthContext:", isAuthenticated);
+    console.log("InterviewSetup: Current Firebase User UID:", firebaseUser.uid);
+    console.log("InterviewSetup: User Email:", firebaseUser.email);
+    console.log("InterviewSetup: User Display Name:", firebaseUser.displayName);
     console.log("InterviewSetup: Selected Category:", selectedCategory.name);
     console.log("InterviewSetup: Selected Difficulty:", selectedDifficulty.name);
     console.log("InterviewSetup: Selected Duration Questions:", selectedDuration.questions);
 
-
     try {
-      // 1. Get the Firebase ID token from the current user
-      const idToken = await currentUser.getIdToken(); // This is an async call
+      const idToken = await firebaseUser.getIdToken();
       console.log("InterviewSetup: Firebase ID Token obtained.");
 
-      // Define your backend URL (e.g., from environment variables)
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
       console.log("InterviewSetup: Backend URL:", backendUrl);
 
-      // 2. Make the API call to your backend, including the Authorization header with the ID token
-      const response = await axios.post(`${backendUrl}/api/interviews/create`, {
+      // --- CRITICAL FIX: Call /api/schedule-interview (new endpoint) ---
+      // This endpoint creates the main interview record in Firestore.
+      // The email sending logic is now in the /api/schedule endpoint (used by Schedule.tsx).
+      const response = await axios.post(`${backendUrl}/api/schedule-interview`, {
+        userId: firebaseUser.uid,              // Firebase user ID
         category: selectedCategory.name,
         difficulty: selectedDifficulty.name,
         numQuestions: selectedDuration.questions,
-        // The user ID should be extracted by the backend from the provided JWT token
+        // Pass current date/time for record-keeping in the 'interviews' collection
+        interviewDate: mockInterviewDate,
+        interviewTime: mockInterviewTime,
+        userEmail: firebaseUser.email,         // User's email from Firebase
+        userName: firebaseUser.displayName || firebaseUser.email // User's name from Firebase
       }, {
         headers: {
-          Authorization: `Bearer ${idToken}` // Pass the Firebase ID token
+          Authorization: `Bearer ${idToken}`, // Pass the Firebase ID token
+          'Content-Type': 'application/json'
         }
       });
 
@@ -175,18 +183,39 @@ const InterviewSetup = () => {
     } catch (err) {
       console.error("Error starting interview:", err); // Log the full error object
 
-      if (axios.isAxiosError(err) && err.response) {
-        // Handle specific HTTP errors
-        if (err.response.status === 401 || err.response.status === 403) {
-            setError("Authentication failed. Please log in again.");
-            console.error("InterviewSetup: API returned 401/403. Redirecting to login.");
-            navigate('/login'); // Redirect to login on authentication failure
+      // --- IMPROVED ERROR HANDLING FOR AXIOS ERRORS ---
+      if (axios.isAxiosError(err)) {
+        // Now 'err' is properly typed as AxiosError
+        if (err.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            if (err.response.status === 401 || err.response.status === 403) {
+                setError("Authentication failed. Please log in again.");
+                console.error("InterviewSetup: API returned 401/403. Redirecting to login.");
+                navigate('/login'); // Redirect to login on authentication failure
+            } else if (err.response.status === 404 && err.config && err.config.method === 'post' && err.config.url && err.config.url.includes('/api/interviews/create')) {
+                // This specific error message helps diagnose if the frontend is still calling the old endpoint
+                setError("Backend endpoint /api/interviews/create not found. Please ensure your frontend is updated to call /api/schedule-interview for starting new interviews.");
+                console.error("Specific 404 for /api/interviews/create detected. This endpoint has been replaced in the backend.");
+            }
+            else {
+                setError(err.response.data?.message || `Failed to start interview. Status: ${err.response.status}.`);
+                console.error("InterviewSetup: API Error Response:", err.response.data);
+            }
+        } else if (err.request) {
+            // The request was made but no response was received
+            // `error.request` is an instance of XMLHttpRequest in the browser and an http.ClientRequest in node.js
+            setError("No response from server. Please check your backend server is running and accessible.");
+            console.error("InterviewSetup: No response from server:", err.request);
         } else {
-            setError(err.response.data.message || "Failed to start interview. Please check your backend connection or try again.");
-            console.error("InterviewSetup: API Error Response:", err.response.data);
+            // Something happened in setting up the request that triggered an Error
+            setError(`Error setting up request: ${err.message}`);
+            console.error("InterviewSetup: Error setting up request:", err.message);
         }
       } else {
+        // Handle non-Axios errors (e.g., from firebaseUser.getIdToken())
         setError("An unexpected error occurred. Please try again. Check console for details.");
+        console.error("InterviewSetup: Non-Axios error:", err);
       }
     } finally {
       setIsLoading(false); // Always stop loading, whether successful or not
@@ -341,7 +370,7 @@ const InterviewSetup = () => {
             </Button>
             <Button
               onClick={handleStartInterview}
-              disabled={isLoading} // Disable button while API call is in progress
+              disabled={isLoading}
             >
               {isLoading ? 'Starting Interview...' : 'Start Interview'}
             </Button>

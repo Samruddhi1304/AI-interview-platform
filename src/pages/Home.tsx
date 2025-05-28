@@ -19,12 +19,12 @@ const Home = () => {
               </p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <Link to="/register">
-                  <Button size="lg" variant="primary" className="bg-white text-primary-700 hover:bg-gray-100">
+                  <Button size="lg" variant="outline" className="border-white text-primary-700 hover:bg-white ">
                     Get Started
                   </Button>
                 </Link>
                 <Link to="/login">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-primary-700">
+                  <Button size="lg" variant="outline" className="border-white text-primary-700 hover:bg-white ">
                     Sign In
                   </Button>
                 </Link>
@@ -235,7 +235,7 @@ const Home = () => {
               Start practicing with our AI-powered mock interviews today and gain the confidence you need to succeed.
             </p>
             <Link to="/register">
-              <Button size="lg" variant="primary" className="bg-white text-primary-700 hover:bg-gray-100">
+              <Button size="lg" variant="outline" className="border-white text-primary-700 hover:bg-white ">
                 Get Started for Free
               </Button>
             </Link>

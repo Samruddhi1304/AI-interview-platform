@@ -1,25 +1,27 @@
-# Logs
-logs
-*.log
+# Node modules for the frontend project (in root)
+/node_modules/
+
+# Environment variables for the frontend project (in root)
+/.env
+
+# Production build output from the frontend (generated in root)
+/build/
+/dist/ # Include if your build output is named 'dist' instead of 'build'
+
+# Vite-specific files
+.vite/
+
+# OS-specific files
+.DS_Store # macOS files
+Thumbs.db # Windows thumbnails
+
+# npm debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+.pnpm-debug.log*
+.pnpm-store/
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-.env
+# IDE-specific files (e.g., VS Code)
+.vscode/
+.idea/

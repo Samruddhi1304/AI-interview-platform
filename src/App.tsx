@@ -1,20 +1,22 @@
 // src/App.tsx
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom'; // <--- Import Navigate here
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import ProtectedRoute from './components/ProtectedRoute'; // <--- Import ProtectedRoute
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Recommendations from './pages/Recommendations';
+import Schedule from './pages/Schedule';
 import InterviewSetup from './pages/InterviewSetup';
-import InterviewSession from './pages/InterviewSession';
-import Results from './pages/Results';
+import InterviewSession from './pages/InterviewSession'; // This is the component for active interviews
+import Results from './pages/Results'; // This is the component for completed interview results
 import NotFound from './pages/NotFound';
 
 // Context
@@ -36,13 +38,20 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/interview/setup" element={<InterviewSetup />} />
-              <Route path="/interview/session/:id" element={<InterviewSession />} /> {/* Note: Ensure this matches your backend's interviewId parameter */}
+              {/* CORRECTED ROUTE: This path should match what the Dashboard is linking to for "Resume" */}
+              {/* It was previously '/interview/session/:id' which is correct. */}
+              {/* The issue was the Dashboard was linking to '/interview/:id' */}
+              {/* So, we keep this route as is, and the Dashboard link was fixed to match this. */}
+              <Route path="/interview/session/:id" element={<InterviewSession />} />
+              {/* This route is for displaying results of COMPLETED interviews */}
               <Route path="/results/:id" element={<Results />} />
+              {/* Other protected routes */}
+              <Route path="/recommendations" element={<Recommendations />} />
+              <Route path="/schedule" element={<Schedule />} />
             </Route>
 
-            {/* Fallback for any unmatched routes - Redirect to dashboard if logged in, otherwise login */}
-            {/* This should probably come after all other routes */}
-            <Route path="*" element={<NotFound />} /> {/* Or redirect to dashboard if authenticated */}
+            {/* Fallback for any unmatched routes */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />

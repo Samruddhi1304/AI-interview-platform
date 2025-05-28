@@ -1,25 +1,26 @@
-# Logs
-logs
-*.log
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+backend/.env
+
+# Firebase Admin SDK Service Account Key
+backend/serviceAccountKey.json
+
+# Production build output
+build/
+
+# macOS files
+.DS_Store
+
+# npm debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+.pnpm-debug.log*
+.pnpm-store/
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-.env
+# Vite-specific
+.vite/
+dist/ # if your frontend build output is named 'dist' instead of 'build'

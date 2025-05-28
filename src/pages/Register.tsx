@@ -16,9 +16,10 @@ const Register = () => {
     email?: string;
     password?: string;
     confirmPassword?: string;
+    general?: string; // <--- ADD THIS LINE
   }>({});
   
-  const { register, loading, error } = useAuth();
+  const { register, loading } = useAuth();
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -27,6 +28,7 @@ const Register = () => {
       email?: string;
       password?: string;
       confirmPassword?: string;
+      general?: string; // <--- ADD THIS LINE (for consistency, though not strictly needed here)
     } = {};
     let isValid = true;
 
@@ -38,7 +40,7 @@ const Register = () => {
     if (!email) {
       errors.email = 'Email is required';
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
+    } else if (!/\S+@\S+\.\S+/.test(email.trim())) { // Added .trim() here too for early validation
       errors.email = 'Email is invalid';
       isValid = false;
     }
@@ -62,13 +64,31 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setFormErrors({}); // Clear previous form errors on new submission attempt
+
     if (validateForm()) {
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+
+      console.log('Attempting to register with email:', `"${trimmedEmail}"`);
+      console.log('Password length:', trimmedPassword.length);
+
       try {
-        await register(name, email, password);
+        await register(trimmedEmail, trimmedPassword);
         navigate('/dashboard');
-      } catch (err) {
-        // Error is handled by the auth context
+      } catch (err: any) {
+        console.error('Registration failed at Register.tsx:', err);
+        let errorMessage = 'Registration failed. Please try again.';
+        if (err.code === 'auth/email-already-in-use') {
+          errorMessage = 'This email is already registered. Please login or use a different email.';
+        } else if (err.code === 'auth/weak-password') {
+          errorMessage = 'Password should be at least 6 characters long.';
+        } else if (err.code === 'auth/invalid-email') {
+          errorMessage = 'The email address is invalid. Please check your spelling.';
+        } else if (err.message) { // Catch any other Firebase error messages
+            errorMessage = err.message;
+        }
+        setFormErrors(prev => ({ ...prev, general: errorMessage }));
       }
     }
   };
@@ -93,9 +113,9 @@ const Register = () => {
             <h3 className="text-lg font-medium text-gray-900">Register</h3>
           </CardHeader>
           <CardBody>
-            {error && (
+            {formErrors.general && (
               <div className="mb-4 p-3 bg-error-50 text-error-700 rounded-md">
-                {error}
+                {formErrors.general}
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-6">
