@@ -12,7 +12,7 @@
 
 # Vite-specific files
 .vite/
-
+backend/serviceAccountKey.json
 # OS-specific files
 .DS_Store # macOS files
 Thumbs.db # Windows thumbnails
