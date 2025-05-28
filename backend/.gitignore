@@ -1,26 +1,12 @@
-# Node modules
-node_modules/
+# Node modules for the backend project (in backend/ folder)
+/node_modules/
 
-# Environment variables
-.env
-backend/.env
+# Environment variables for the backend project (in backend/ folder)
+/.env
 
-# Firebase Admin SDK Service Account Key
-backend/serviceAccountKey.json
+# Firebase Admin SDK Service Account Key (CRUCIAL: NEVER COMMIT THIS)
+/serviceAccountKey.json
 
-# Production build output
-build/
-
-# macOS files
-.DS_Store
-
-# npm debug logs
+# Logs and temporary files for the backend
+*.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-.pnpm-store/
-
-# Vite-specific
-.vite/
-dist/ # if your frontend build output is named 'dist' instead of 'build'

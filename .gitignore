@@ -5,8 +5,10 @@
 /.env
 
 # Production build output from the frontend (generated in root)
-/build/
-/dist/ # Include if your build output is named 'dist' instead of 'build'
+/dist/   # <--- ENSURE THIS LINE IS HERE
+/build/  # <--- AND THIS LINE IS HERE (if your build is named 'build')
+
+# IMPORTANT: Ensure there is NO line like 'backend/build' in this file.
 
 # Vite-specific files
 .vite/
