@@ -15,6 +15,7 @@ const { v4: uuidv4 } = require('uuid'); // For generating unique IDs
 const PDFDocument = require('pdfkit');
 const sgMail = require('@sendgrid/mail'); // SendGrid library
 const path = require('path'); // IMPORTANT: Add this line to import the path module
+const history = require('connect-history-api-fallback'); // NEW: Import history API fallback middleware
 
 const app = express();
 // Use process.env.PORT provided by Render, fallback to 3001 for local development
@@ -977,27 +978,17 @@ app.delete('/api/schedule/:id', verifyFirebaseToken, async (req, res) => {
 });
 // --- END /api/schedule DELETE ---
 
+
 // --- Serve React App (Frontend) ---
+console.log("Server.js: Setting up history API fallback for frontend routing."); // NEW: Log for history fallback
+app.use(history()); // NEW: Use history API fallback
 console.log("Server.js: Setting up static file serving for frontend.");
 // Serve static files from 'backend/build'
 app.use(express.static(path.join(__dirname, 'build')));
 console.log("Server.js: Static files path set to:", path.join(__dirname, 'build'));
 
-// Explicitly serve index.html for the root URL ONLY
-app.get('/', (req, res) => {
-    console.log("Server.js: Serving index.html for root path.");
-    res.sendFile(path.join(__dirname, 'build', 'index.html'), (err) => {
-        if (err) {
-            console.error("Error sending index.html for root path:", err);
-            res.status(500).send(err);
-        }
-    });
-});
-
-// IMPORTANT: The app.get('/*', ...) wildcard catch-all is REMOVED for this test.
-// This means client-side routes (e.g., /dashboard) will not be served by the backend
-// if directly accessed by typing into the browser. However, internal navigation
-// within the React app should still work.
+// IMPORTANT: No app.get('/') or app.get('/*') needed here,
+// as connect-history-api-fallback and express.static handle it.
 
 
 // Start the server
