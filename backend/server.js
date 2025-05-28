@@ -977,30 +977,27 @@ app.delete('/api/schedule/:id', verifyFirebaseToken, async (req, res) => {
 });
 // --- END /api/schedule DELETE ---
 
-
 // --- Serve React App (Frontend) ---
 console.log("Server.js: Setting up static file serving for frontend.");
 // Serve static files from 'backend/build'
 app.use(express.static(path.join(__dirname, 'build')));
 console.log("Server.js: Static files path set to:", path.join(__dirname, 'build'));
 
-// Explicitly serve index.html for the root URL
+// Explicitly serve index.html for the root URL ONLY
 app.get('/', (req, res) => {
     console.log("Server.js: Serving index.html for root path.");
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
-
-// For any requests that are NOT API calls and are not caught by static files,
-// serve the main React index.html
-app.get('/*', (req, res) => { // IMPORTANT: Ensure this route catches all paths
-    console.log("Server.js: Serving index.html for client-side route:", req.path);
     res.sendFile(path.join(__dirname, 'build', 'index.html'), (err) => {
         if (err) {
-            console.error("Error sending index.html:", err);
+            console.error("Error sending index.html for root path:", err);
             res.status(500).send(err);
         }
     });
 });
+
+// IMPORTANT: The app.get('/*', ...) wildcard catch-all is REMOVED for this test.
+// This means client-side routes (e.g., /dashboard) will not be served by the backend
+// if directly accessed by typing into the browser. However, internal navigation
+// within the React app should still work.
 
 
 // Start the server
