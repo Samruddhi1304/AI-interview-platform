@@ -1,38 +1,58 @@
 // backend/server.js
 
-// Load environment variables from .env file
+// backend/server.js
+
+// Load environment variables from .env file (for local development)
 require('dotenv').config();
 
 // --- Debugging for server startup ---
 console.log('--- SERVER.JS IS STARTING UP ---');
-// --- End Debugging ---
+console.log("Server.js: Initializing modules..."); // Added log
 
 const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid'); // For generating unique IDs
-const PDFDocument = require('pdfkit'); // Import PDFKit
+const PDFDocument = require('pdfkit');
 const sgMail = require('@sendgrid/mail'); // NEW: SendGrid library
+const path = require('path'); // IMPORTANT: Add this line to import the path module
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3001; // Use Render's assigned PORT, fallback to 3001 for local development
 
 // --- Firebase Admin SDK Initialization ---
+console.log("Server.js: Initializing Firebase Admin SDK...");
 try {
-    // IMPORTANT: Make sure 'serviceAccountKey.json' is in the 'backend' directory
-    const serviceAccount = require('./serviceAccountKey.json');
+    // IMPORTANT: Get the service account JSON content from environment variable
+    const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON; // CRITICAL CHANGE: Read from environment variable
+    if (!serviceAccountJsonString) {
+        console.error("Server.js ERROR: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set!");
+        process.exit(1); // Exit if critical variable is missing
+    }
+
+    // Attempt to parse the JSON string
+    let serviceAccount;
+    try {
+        serviceAccount = JSON.parse(serviceAccountJsonString);
+    } catch (parseError) {
+        console.error("Server.js ERROR: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Check format:", parseError.message);
+        process.exit(1); // Exit if JSON parsing fails
+    }
+    console.log("Server.js: Successfully parsed service account JSON.");
+
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
-    console.log('Firebase Admin SDK initialized successfully.');
+    console.log('Server.js: Firebase Admin SDK initialized successfully.');
 } catch (error) {
-    console.error('Error initializing Firebase Admin SDK:', error);
-    console.error('Please ensure serviceAccountKey.json is correct and accessible in the backend directory.');
+    console.error('Server.js ERROR: Firebase Admin SDK initialization failed:', error.message);
+    console.error('Please ensure FIREBASE_SERVICE_ACCOUNT_JSON environment variable is correct and accessible.');
     process.exit(1); // Exit if Firebase cannot be initialized
 }
 const db = admin.firestore();
-// --- END Firebase Admin SDK Initialization ---
+console.log("Server.js: Firebase initialized. Continuing with other setup..."); // Added log
+// --- END Firebase Admin SDK Initialization ----
 
 // Middleware
 app.use(cors());
@@ -1016,8 +1036,43 @@ app.delete('/api/schedule/:id', verifyFirebaseToken, async (req, res) => {
 
 
 // Start the server
+// ... (all your API routes, including the ones you just provided, should be above this) ...
+
+// --- Serve React App (Frontend) ---
+console.log("Server.js: Setting up static file serving for frontend.");
+// Serve static files from 'backend/build'
+app.use(express.static(path.join(__dirname, 'build')));
+console.log("Server.js: Static files path set to:", path.join(__dirname, 'build'));
+
+// For any requests that are NOT API calls and are not caught by static files,
+// serve the main React index.html
+app.get('/*', (req, res) => { // IMPORTANT: Ensure this route catches all paths
+    console.log("Server.js: Serving index.html for route:", req.path);
+    res.sendFile(path.join(__dirname, 'build', 'index.html'), (err) => {
+        if (err) {
+            console.error("Error sending index.html:", err);
+            res.status(500).send(err);
+        }
+    });
+});
+
+
+// Start the server
+console.log(`Server.js: Attempting to start server on port: ${port}`);
 app.listen(port, () => {
-    console.log(`Backend server listening at http://localhost:${port}`);
-    console.log(`SENDER_EMAIL: ${process.env.SENDER_EMAIL}`); // Confirm env var is loaded
-    console.log(`FRONTEND_URL: ${process.env.FRONTEND_URL}`); // Confirm env var is loaded
+    console.log(`Server.js: Backend server is running on port ${port}`);
+    console.log(`Server.js: SENDER_EMAIL: ${process.env.SENDER_EMAIL ? 'Loaded' : 'Not Loaded'}`); // Confirm env var is loaded
+    console.log(`Server.js: FRONTEND_URL: ${process.env.FRONTEND_URL ? process.env.FRONTEND_URL : 'Not Loaded'}`); // Confirm env var is loaded
+    console.log("Server.js: Application fully started!");
+});
+
+// Add general error handler at the very end to catch unhandled promise rejections or uncaught exceptions
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Server.js UNHANDLED REJECTION:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Server.js UNCAUGHT EXCEPTION:', error);
+  process.exit(1);
 });
