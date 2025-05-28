@@ -11,20 +11,19 @@ import {
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, // <--- IMPORTANT: This function is for registration
+  createUserWithEmailAndPassword, 
 } from 'firebase/auth';
 
-import { auth } from '../services/firebase'; // Ensure this path correctly points to your firebase.ts initialization file
+import { auth } from '../services/firebase'; 
 
-// Define the structure for your application's user object
-// This is a simplified version of FirebaseUser for your app's needs
+
 interface AppUser {
   id: string;
-  name?: string | null; // Display name can be null
+  name?: string | null; 
   email: string;
 }
 
-// Define the shape of the AuthContext's value
+
 interface AuthContextType {
   user: AppUser | null; // Your app's simplified user object
   firebaseUser: FirebaseUser | null; // The full Firebase User object for more details if needed
