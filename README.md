@@ -5,6 +5,8 @@ and generating personalized performance reports using Google Gemini AI and Fireb
 the platform offers a seamless experience from interview scheduling to feedback analysis.
 
 ---
+> 🚀 Built during the **HackVortex Round 1 Hackathon 2025**  
+> 🎯 Theme: Open Innovation
 
 ## 📌 Problem Statement
 
