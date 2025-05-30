@@ -129,7 +129,7 @@ Firebase for secure user management and data storage, and is fully built on the 
 
 [Click here to view the live app](https://ai-interview-platform-1-zqe0.onrender.com)
 ---
-
+note:- Emails are received in the Spam Folder, you have to make changes to make it in Inbox
 ## ⚙️ Run Instructions
 
 ### 1. Clone the Repository
