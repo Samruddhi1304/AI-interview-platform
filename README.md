@@ -89,8 +89,13 @@ Firebase for secure user management and data storage, and is fully built on the 
 
 ## 📸 Screenshots
 
-> _Add screenshots of the following:_
-- Login / Signup Page
+> _Add screenshots :_
+- ### 🔐 Login Screen
+![Login Screen](https://user-images.githubusercontent.com/12345678/abcdefg-login.png)
+
+- ###📝 Signup Page
+![Signup](https://github.com/user-attachments/assets/04f33724-ec56-4bbe-baf9-5b633adea158)
+
 - Dashboard with Interview History
 - Interview Interface (Question/Answer)
 - Feedback Summary
