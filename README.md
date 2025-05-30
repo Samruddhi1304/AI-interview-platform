@@ -94,35 +94,35 @@ Firebase for secure user management and data storage, and is fully built on the 
 - ###📝 Signup Page
 ![Signup](https://github.com/user-attachments/assets/04f33724-ec56-4bbe-baf9-5b633adea158)
 
--### Home Screen
+-### ✅Home Screen
 ![Home](https://github.com/user-attachments/assets/23503879-7179-4a9b-a030-60a7ca61ed72)
 
--### DashBoard
+-###✅ DashBoard
 ![Dashboard](https://github.com/user-attachments/assets/3077aef2-a667-49d3-9ba5-8210701c8c19)
 
--### Interview setup Screen
+-### ✅ Interview setup Screen
 ![Interviewsetup](https://github.com/user-attachments/assets/8130efc9-063b-405e-b3e0-c52dfb6bf552)
 
--###Interview Screen
+-### ✅ Interview Screen
 ![Interviewscreen](https://github.com/user-attachments/assets/25ab092e-eb5e-4a44-b84f-908389d705a7)
 
--###Interview results
+-### ✅ Interview results
 ![Interviewresults](https://github.com/user-attachments/assets/3a43b2c7-17d3-416e-bc24-37f2c5c1281a)
 
--### Detailed Question Explaination
+-### ✅ Detailed Question Explaination
 ![DetailedQuestionExp](https://github.com/user-attachments/assets/c3f12879-076b-4d8d-9ff0-3457df401f13)
 
--###Detailed Downloaded report
+-### ✅ Detailed Downloaded report
 ![Detailedreport](https://github.com/user-attachments/assets/58b7e106-6a36-4058-86f2-dc5724dd26ee)
 
--###Custom Interview Scheduling
+-### ✅ Custom Interview Scheduling
 ![customSchedule](https://github.com/user-attachments/assets/7863cca6-2356-4c96-8223-037c9ebab731)
 
--###Interview Scheduling
+-### ✅ Interview Scheduling
 ![Interviewsch](https://github.com/user-attachments/assets/bf2f3b2a-2f47-44f0-9c10-a0320e679595)
 ![Interviewassign](https://github.com/user-attachments/assets/61e26654-a1d8-44cb-8167-1253eb48b23f)
 
--### Deployment link
+-### ✅ Deployment link
 ## 🚀 Live Demo
 
 [Click here to view the live app](https://ai-interview-platform-1-zqe0.onrender.com)
