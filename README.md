@@ -88,8 +88,6 @@ Firebase for secure user management and data storage, and is fully built on the 
 ---
 
 ## 📸 Screenshots
-
-> _Add screenshots :_
 - ### 🔐 Login Screen
 ![Login Screen](https://github.com/user-attachments/assets/f1c6bee9-e287-44ae-9edd-f99b1bb021c8)
 
