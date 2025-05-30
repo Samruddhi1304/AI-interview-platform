@@ -125,7 +125,9 @@ Firebase for secure user management and data storage, and is fully built on the 
 ![Interviewassign](https://github.com/user-attachments/assets/61e26654-a1d8-44cb-8167-1253eb48b23f)
 
 -### Deployment link
-![Deploymentlink](https://ai-interview-platform-1-zqe0.onrender.com)
+## 🚀 Live Demo
+
+[Click here to view the live app](https://ai-interview-platform-1-zqe0.onrender.com)
 ---
 
 ## ⚙️ Run Instructions
