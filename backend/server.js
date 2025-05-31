@@ -20,23 +20,34 @@ const history = require('connect-history-api-fallback'); // NEW: Import history 
 const app = express();
 // Use process.env.PORT provided by Render, fallback to 3001 for local development
 const port = process.env.PORT || 3001;
+// --- START OF REQUIRED CODE FOR BASE64 DECODING ---
 
-// --- Firebase Admin SDK Initialization ---
-console.log("Server.js: Initializing Firebase Admin SDK...");
+// Server.js: Initializing Firebase Admin SDK...
 try {
-    // IMPORTANT: Get the service account JSON content from environment variable
-    const serviceAccountJsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    if (!serviceAccountJsonString) {
-        console.error("Server.js ERROR: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is not set!");
+    // IMPORTANT: Get the Base64 encoded service account string from environment variable
+    const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+    if (!serviceAccountBase64) {
+        console.error("Server.js ERROR: FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is not set!");
         process.exit(1); // Exit if critical variable is missing
     }
 
-    // Attempt to parse the JSON string
+    // Attempt to decode the Base64 string into a JSON string
+    let serviceAccountJsonString;
+    try {
+        serviceAccountJsonString = Buffer.from(serviceAccountBase64, 'base64').toString('utf8');
+    } catch (decodeError) {
+        console.error("Server.js ERROR: Failed to decode FIREBASE_SERVICE_ACCOUNT_BASE64. Check encoding:", decodeError.message);
+        process.exit(1); // Exit if Base64 decoding fails
+    }
+    console.log("Server.js: Successfully decoded Base64 service account string.");
+
+
+    // Attempt to parse the JSON string into an object
     let serviceAccount;
     try {
         serviceAccount = JSON.parse(serviceAccountJsonString);
     } catch (parseError) {
-        console.error("Server.js ERROR: Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON. Check format:", parseError.message);
+        console.error("Server.js ERROR: Failed to parse JSON from decoded service account string. Check format:", parseError.message);
         process.exit(1); // Exit if JSON parsing fails
     }
     console.log("Server.js: Successfully parsed service account JSON.");
@@ -45,14 +56,17 @@ try {
         credential: admin.credential.cert(serviceAccount)
     });
     console.log('Server.js: Firebase Admin SDK initialized successfully.');
+
 } catch (error) {
     console.error('Server.js ERROR: Firebase Admin SDK initialization failed:', error.message);
-    console.error('Please ensure FIREBASE_SERVICE_ACCOUNT_JSON environment variable is correct and accessible.');
+    console.error('Please ensure FIREBASE_SERVICE_ACCOUNT_BASE64 environment variable is correct and accessible.');
     process.exit(1); // Exit if Firebase cannot be initialized
 }
 const db = admin.firestore();
 console.log("Server.js: Firebase initialized. Continuing with other setup...");
-// --- END Firebase Admin SDK Initialization ---
+
+// --- END OF REQUIRED CODE FOR BASE64 DECODING ---
+
 
 // Middleware
 app.use(cors());
